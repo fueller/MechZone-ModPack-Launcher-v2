@@ -14,6 +14,7 @@ namespace MechZone_ModPack_Launcher_v2
 {
     public partial class ModPack : MetroUserControl
     {
+        jsonClasses.JCmodpackInfo packInfo;
         public ModPack()
         {
             InitializeComponent();
@@ -35,6 +36,12 @@ namespace MechZone_ModPack_Launcher_v2
         {
             get { return modInfoName.Text; }
             set { modInfoName.Text = value; Invalidate(); }
+        }
+
+        public jsonClasses.JCmodpackInfo modPackInfo
+        {
+            get { return packInfo; }
+            set { packInfo = modPackInfo; Invalidate(); }
         }
 
         private void ModPack_Load(object sender, EventArgs e)

@@ -76,6 +76,7 @@
     </Compile>
     <Compile Include="jsonClasses\JCapi.cs" />
     <Compile Include="jsonClasses\JCassets.cs" />
+    <Compile Include="jsonClasses\JCdownloadInfo.cs" />
     <Compile Include="jsonClasses\JCmodpackInfo.cs" />
     <Compile Include="jsonClasses\JCmodpacks.cs" />
     <Compile Include="jsonClasses\JCmodpackVersion.cs" />

@@ -45,19 +45,20 @@
             // 
             // modInfoName
             // 
-            this.modInfoName.AutoSize = true;
+            this.modInfoName.FontSize = MetroFramework.MetroLabelSize.Tall;
+            this.modInfoName.FontWeight = MetroFramework.MetroLabelWeight.Bold;
             this.modInfoName.Location = new System.Drawing.Point(154, 4);
             this.modInfoName.Name = "modInfoName";
-            this.modInfoName.Size = new System.Drawing.Size(81, 19);
+            this.modInfoName.Size = new System.Drawing.Size(326, 25);
             this.modInfoName.TabIndex = 1;
             this.modInfoName.Text = "metroLabel1";
+            this.modInfoName.UseStyleColors = true;
             // 
             // modInfoDescription
             // 
-            this.modInfoDescription.AutoSize = true;
-            this.modInfoDescription.Location = new System.Drawing.Point(154, 27);
+            this.modInfoDescription.Location = new System.Drawing.Point(154, 33);
             this.modInfoDescription.Name = "modInfoDescription";
-            this.modInfoDescription.Size = new System.Drawing.Size(83, 19);
+            this.modInfoDescription.Size = new System.Drawing.Size(326, 102);
             this.modInfoDescription.TabIndex = 2;
             this.modInfoDescription.Text = "metroLabel2";
             // 
@@ -75,14 +76,12 @@
             this.Load += new System.EventHandler(this.ModPack_Load);
             ((System.ComponentModel.ISupportInitialize)(this.modInfoImage)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
-
-        private System.Windows.Forms.PictureBox modInfoImage;
-        private MetroFramework.Controls.MetroLabel modInfoName;
-        private MetroFramework.Controls.MetroLabel modInfoDescription;
+        public System.Windows.Forms.PictureBox modInfoImage;
+        public MetroFramework.Controls.MetroLabel modInfoName;
+        public MetroFramework.Controls.MetroLabel modInfoDescription;
     }
 }

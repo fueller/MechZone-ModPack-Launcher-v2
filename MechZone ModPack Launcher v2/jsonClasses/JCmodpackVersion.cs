@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MechZone_ModPack_Launcher_v2.jsonClasses
 {
-    class JCmodpackVersion
+    public class JCmodpackVersion
     {
         public string minecraft { get; set; }
         public string minecraft_md5 { get; set; }

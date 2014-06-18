@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MechZone_ModPack_Launcher_v2.jsonClasses
 {
-    class JCapi
+    public class JCapi
     {
         public string api { get; set; }
         public string version { get; set; }

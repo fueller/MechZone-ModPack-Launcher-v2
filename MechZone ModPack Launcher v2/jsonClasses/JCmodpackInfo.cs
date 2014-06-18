@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MechZone_ModPack_Launcher_v2.jsonClasses
 {
-    class JCmodpackInfo
+    public class JCmodpackInfo
     {
         public string name { get; set; }
         public string display_name { get; set; }

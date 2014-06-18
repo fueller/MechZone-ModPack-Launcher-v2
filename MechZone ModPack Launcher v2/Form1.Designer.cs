@@ -35,13 +35,13 @@
             this.infoWebBrowser = new System.Windows.Forms.WebBrowser();
             this.modPacksTabPage = new MetroFramework.Controls.MetroTabPage();
             this.modPacksContainer = new MetroFramework.Controls.MetroPanel();
-            this.metroButton1 = new MetroFramework.Controls.MetroButton();
             this.optionsTabPage = new MetroFramework.Controls.MetroTabPage();
-            this.styleSelector = new MetroFramework.Controls.MetroComboBox();
-            this.styleLabel = new MetroFramework.Controls.MetroLabel();
-            this.metroStyleManager = new MetroFramework.Components.MetroStyleManager(this.components);
-            this.themeLabel = new MetroFramework.Controls.MetroLabel();
             this.themeSelector = new MetroFramework.Controls.MetroComboBox();
+            this.themeLabel = new MetroFramework.Controls.MetroLabel();
+            this.styleLabel = new MetroFramework.Controls.MetroLabel();
+            this.styleSelector = new MetroFramework.Controls.MetroComboBox();
+            this.metroButton1 = new MetroFramework.Controls.MetroButton();
+            this.metroStyleManager = new MetroFramework.Components.MetroStyleManager(this.components);
             this.mainTabControl.SuspendLayout();
             this.infoTabPage.SuspendLayout();
             this.modPacksTabPage.SuspendLayout();
@@ -56,20 +56,20 @@
             this.mainTabControl.Controls.Add(this.optionsTabPage);
             this.mainTabControl.Location = new System.Drawing.Point(23, 63);
             this.mainTabControl.Name = "mainTabControl";
-            this.mainTabControl.SelectedIndex = 2;
+            this.mainTabControl.SelectedIndex = 0;
             this.mainTabControl.Size = new System.Drawing.Size(1092, 489);
             this.mainTabControl.TabIndex = 0;
             // 
             // infoTabPage
             // 
             this.infoTabPage.Controls.Add(this.infoWebBrowser);
-            this.infoTabPage.HorizontalScrollbarBarColor = true;
+            this.infoTabPage.HorizontalScrollbarSize = 0;
             this.infoTabPage.Location = new System.Drawing.Point(4, 35);
             this.infoTabPage.Name = "infoTabPage";
             this.infoTabPage.Size = new System.Drawing.Size(1084, 450);
             this.infoTabPage.TabIndex = 0;
             this.infoTabPage.Text = "Info";
-            this.infoTabPage.VerticalScrollbarBarColor = true;
+            this.infoTabPage.VerticalScrollbarSize = 0;
             // 
             // infoWebBrowser
             // 
@@ -110,15 +110,6 @@
             this.modPacksContainer.VerticalScrollbarHighlightOnWheel = false;
             this.modPacksContainer.VerticalScrollbarSize = 10;
             // 
-            // metroButton1
-            // 
-            this.metroButton1.Location = new System.Drawing.Point(745, 34);
-            this.metroButton1.Name = "metroButton1";
-            this.metroButton1.Size = new System.Drawing.Size(75, 23);
-            this.metroButton1.TabIndex = 1;
-            this.metroButton1.Text = "metroButton1";
-            this.metroButton1.Click += new System.EventHandler(this.metroButton1_Click);
-            // 
             // optionsTabPage
             // 
             this.optionsTabPage.Controls.Add(this.themeSelector);
@@ -133,28 +124,15 @@
             this.optionsTabPage.Text = "Options";
             this.optionsTabPage.VerticalScrollbarBarColor = true;
             // 
-            // styleSelector
+            // themeSelector
             // 
-            this.styleSelector.FormattingEnabled = true;
-            this.styleSelector.ItemHeight = 23;
-            this.styleSelector.Location = new System.Drawing.Point(58, 3);
-            this.styleSelector.Name = "styleSelector";
-            this.styleSelector.Size = new System.Drawing.Size(121, 29);
-            this.styleSelector.TabIndex = 2;
-            this.styleSelector.SelectedIndexChanged += new System.EventHandler(this.styleSelector_SelectedIndexChanged);
-            // 
-            // styleLabel
-            // 
-            this.styleLabel.AutoSize = true;
-            this.styleLabel.Location = new System.Drawing.Point(3, 9);
-            this.styleLabel.Name = "styleLabel";
-            this.styleLabel.Size = new System.Drawing.Size(36, 19);
-            this.styleLabel.TabIndex = 3;
-            this.styleLabel.Text = "Style";
-            // 
-            // metroStyleManager
-            // 
-            this.metroStyleManager.Owner = this;
+            this.themeSelector.FormattingEnabled = true;
+            this.themeSelector.ItemHeight = 23;
+            this.themeSelector.Location = new System.Drawing.Point(58, 38);
+            this.themeSelector.Name = "themeSelector";
+            this.themeSelector.Size = new System.Drawing.Size(121, 29);
+            this.themeSelector.TabIndex = 5;
+            this.themeSelector.SelectedIndexChanged += new System.EventHandler(this.themeSelector_SelectedIndexChanged);
             // 
             // themeLabel
             // 
@@ -165,15 +143,37 @@
             this.themeLabel.TabIndex = 4;
             this.themeLabel.Text = "Theme";
             // 
-            // themeSelector
+            // styleLabel
             // 
-            this.themeSelector.FormattingEnabled = true;
-            this.themeSelector.ItemHeight = 23;
-            this.themeSelector.Location = new System.Drawing.Point(58, 38);
-            this.themeSelector.Name = "themeSelector";
-            this.themeSelector.Size = new System.Drawing.Size(121, 29);
-            this.themeSelector.TabIndex = 5;
-            this.themeSelector.SelectedIndexChanged += new System.EventHandler(this.themeSelector_SelectedIndexChanged);
+            this.styleLabel.AutoSize = true;
+            this.styleLabel.Location = new System.Drawing.Point(3, 9);
+            this.styleLabel.Name = "styleLabel";
+            this.styleLabel.Size = new System.Drawing.Size(36, 19);
+            this.styleLabel.TabIndex = 3;
+            this.styleLabel.Text = "Style";
+            // 
+            // styleSelector
+            // 
+            this.styleSelector.FormattingEnabled = true;
+            this.styleSelector.ItemHeight = 23;
+            this.styleSelector.Location = new System.Drawing.Point(58, 3);
+            this.styleSelector.Name = "styleSelector";
+            this.styleSelector.Size = new System.Drawing.Size(121, 29);
+            this.styleSelector.TabIndex = 2;
+            this.styleSelector.SelectedIndexChanged += new System.EventHandler(this.styleSelector_SelectedIndexChanged);
+            // 
+            // metroButton1
+            // 
+            this.metroButton1.Location = new System.Drawing.Point(745, 34);
+            this.metroButton1.Name = "metroButton1";
+            this.metroButton1.Size = new System.Drawing.Size(75, 23);
+            this.metroButton1.TabIndex = 1;
+            this.metroButton1.Text = "metroButton1";
+            this.metroButton1.Click += new System.EventHandler(this.metroButton1_Click);
+            // 
+            // metroStyleManager
+            // 
+            this.metroStyleManager.Owner = this;
             // 
             // mainWindow
             // 

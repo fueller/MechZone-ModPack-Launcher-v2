@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace MechZone_ModPack_Launcher_v2.jsonClasses
 {
-    class JCassets
+    public class JCassets
     {
         public bool @virtual { get; set; }
         public Dictionary<string, hs> objects { get; set; }
     }
 
-    class hs
+    public class hs
     {
         public string hash { get; set; }
         public int size { get; set; }

@@ -37,6 +37,14 @@ namespace MechZone_ModPack_Launcher_v2
             appdata = var;
             location = appdata + "/.mechzoneV2";
 
+            if(System.Diagnostics.Debugger.IsAttached)
+            {
+                metroButton1.Visible = true;
+            } else
+            {
+                metroButton1.Visible = false;
+            }
+
             foreach (MetroColorStyle color in (MetroColorStyle[]) Enum.GetValues(typeof(MetroColorStyle)))
             {
                 styleSelector.Items.Add(color);
@@ -62,32 +70,92 @@ namespace MechZone_ModPack_Launcher_v2
 
         void getModPacks()
         {
-            String temp = getStringFromUrl(solderApiUrl + "modpack");
-            aviableModpacks = JsonConvert.DeserializeObject<jsonClasses.JCmodpacks>(temp);
+            try
+            {
+                String temp = getStringFromUrl(solderApiUrl + "modpack");
+                aviableModpacks = JsonConvert.DeserializeObject<jsonClasses.JCmodpacks>(temp);
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
         void getModPackInfos()
         {
-            foreach (string modpack in aviableModpacks.modpacks.Keys)
+            try
             {
-                modPackInfos[modpack] = JsonConvert.DeserializeObject<jsonClasses.JCmodpackInfo>(getStringFromUrl(solderApiUrl + "modpack/" + modpack));
+                foreach(string modpack in aviableModpacks.modpacks.Keys)
+                {
+                    modPackInfos[modpack] = JsonConvert.DeserializeObject<jsonClasses.JCmodpackInfo>(getStringFromUrl(solderApiUrl + "modpack/" + modpack));
+                }
+
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
         }
 
         void listModPacks()
         {
-            int i = 0;
-            foreach (string modpack in aviableModpacks.modpacks.Keys)
+            try
             {
-                ModPack mp = new ModPack();
-                mp.Location = new Point(5, 5 + (150 * i));
-                mp.modPackDescription = modPackInfos[modpack].description;
-                mp.modPackName = modPackInfos[modpack].display_name;
-                mp.modPackImage = modPackInfos[modpack].icon;
-                modPacksContainer.Controls.Add(mp);
-                i++;
+                int i = 0;
+                foreach(string modpack in aviableModpacks.modpacks.Keys)
+                {
+                    ModPack mp = new ModPack();
+                    mp.Location = new Point(5, 5 + (150 * i));
+                    mp.modPackDescription = modPackInfos[modpack].description;
+                    mp.modPackName = modPackInfos[modpack].display_name;
+                    mp.modPackImage = modPackInfos[modpack].icon;
+                    mp.Click += new EventHandler(modpackSelected);
+                    mp.modInfoImage.Click += new EventHandler(modpackSelected);
+                    mp.modInfoDescription.Click += new EventHandler(modpackSelected);
+                    mp.modInfoName.Click += new EventHandler(modpackSelected);
+                    mp.modPackInfo = modPackInfos[modpack];
+                    modPacksContainer.Controls.Add(mp);
+                    i++;
+                }
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
             
+        }
+
+        private void modpackSelected(object sender, EventArgs e)
+        {
+            try
+            {
+                ModPack mp = null;
+                if(sender.GetType().Equals(typeof(ModPack)))
+                {
+                    mp = (ModPack)sender;
+                } else if(sender.GetType().Equals(typeof(MetroLabel)))
+                {
+                    MetroLabel label = (MetroLabel)sender;
+                    if(label.Parent.GetType().Equals(typeof(ModPack)))
+                    {
+                        mp = (ModPack)label.Parent;
+                    } else
+                    {
+                        throw new Exception("Selected ModPack Error");
+                    }
+                } else if(sender.GetType().Equals(typeof(PictureBox)))
+                {
+                    PictureBox pb = (PictureBox)sender;
+                    if(pb.Parent.GetType().Equals(typeof(ModPack)))
+                    {
+                        mp = (ModPack)pb.Parent;
+                    } else
+                    {
+                        throw new Exception("Selected ModPack Error");
+                    }
+                }
+                Console.WriteLine(mp.modPackInfo.name);
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
         string getStringFromUrl(string url)
@@ -116,9 +184,10 @@ namespace MechZone_ModPack_Launcher_v2
 
         private void metroButton1_Click(object sender, EventArgs e)
         {
-            DownloadForm df = new DownloadForm();
-            df.senderForm = this;
-            df.ShowDialog();
+            //DownloadForm df = new DownloadForm();
+            //df.senderForm = this;
+            //df.ShowDialog();
+
         }
 
         private void styleSelector_SelectedIndexChanged(object sender, EventArgs e)
@@ -133,11 +202,6 @@ namespace MechZone_ModPack_Launcher_v2
             StyleManager.Theme = (MetroThemeStyle)themeSelector.SelectedItem;
             Properties.Settings.Default.selectedTheme = themeSelector.SelectedIndex;
             Properties.Settings.Default.Save();
-        }
-
-        private void metroUserControl1_Load(object sender, EventArgs e)
-        {
-
         }
     }
 }
