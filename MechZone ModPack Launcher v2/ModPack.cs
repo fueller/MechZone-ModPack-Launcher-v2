@@ -41,7 +41,7 @@ namespace MechZone_ModPack_Launcher_v2
         public jsonClasses.JCmodpackInfo modPackInfo
         {
             get { return packInfo; }
-            set { packInfo = modPackInfo; Invalidate(); }
+            set { packInfo = value; Invalidate(); }
         }
 
         private void ModPack_Load(object sender, EventArgs e)

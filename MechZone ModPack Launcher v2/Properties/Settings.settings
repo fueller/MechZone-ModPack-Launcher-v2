@@ -8,5 +8,11 @@
     <Setting Name="selectedTheme" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">2</Value>
     </Setting>
+    <Setting Name="selectedProfile" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="selectedModPack" Type="System.String" Scope="User">
+      <Value Profile="(Default)">mechzone-modpack</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

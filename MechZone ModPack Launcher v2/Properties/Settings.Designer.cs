@@ -46,5 +46,29 @@ namespace MechZone_ModPack_Launcher_v2.Properties {
                 this["selectedTheme"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int selectedProfile {
+            get {
+                return ((int)(this["selectedProfile"]));
+            }
+            set {
+                this["selectedProfile"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("mechzone-modpack")]
+        public string selectedModPack {
+            get {
+                return ((string)(this["selectedModPack"]));
+            }
+            set {
+                this["selectedModPack"] = value;
+            }
+        }
     }
 }

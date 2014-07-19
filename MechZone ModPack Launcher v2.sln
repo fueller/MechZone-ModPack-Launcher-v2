@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.21730.1
+VisualStudioVersion = 14.0.21901.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MechZone ModPack Launcher v2", "MechZone ModPack Launcher v2\MechZone ModPack Launcher v2.csproj", "{138651C5-A724-400F-BAAC-E4E032DB1D6A}"
 EndProject

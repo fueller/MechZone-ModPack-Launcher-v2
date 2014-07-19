@@ -10,7 +10,8 @@ namespace MechZone_ModPack_Launcher_v2.jsonClasses
     {
         public string minecraft { get; set; }
         public string minecraft_md5 { get; set; }
-        public object forge { get; set; }
+        public string forge { get; set; }
+        public string forgeVersion { get; set; }
         public List<Mod> mods { get; set; }
     }
 
