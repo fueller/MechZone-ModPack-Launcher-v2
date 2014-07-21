@@ -30,7 +30,7 @@
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>index.php</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
-    <ApplicationRevision>5</ApplicationRevision>
+    <ApplicationRevision>6</ApplicationRevision>
     <ApplicationVersion>2.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -123,6 +123,7 @@
     <Compile Include="jsonClasses\JCprofileSave.cs" />
     <Compile Include="jsonClasses\JCrefreshPayload.cs" />
     <Compile Include="jsonClasses\JCrefreshResponse.cs" />
+    <Compile Include="jsonClasses\JCversion.cs" />
     <Compile Include="main.cs">
       <SubType>form</SubType>
     </Compile>

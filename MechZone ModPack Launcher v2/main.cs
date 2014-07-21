@@ -23,6 +23,7 @@ using System.Reflection;
 using System.Diagnostics;
 using MechZone_ModPack_Launcher_v2.jsonClasses;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 
 namespace MechZone_ModPack_Launcher_v2
 {
@@ -45,10 +46,11 @@ namespace MechZone_ModPack_Launcher_v2
         {
             try
             {
-
+                
                 InitializeComponent();
+
+                mainTabControl.SelectedIndex = 0;
                 appdata = Environment.GetEnvironmentVariable("appdata");
-                Console.WriteLine(Environment.GetEnvironmentVariable("JAVA_HOME"));
                 location = appdata + "\\.mechzoneV2";
                 solderApiUrl = solderUrl + @"index.php/api/";
                 modDownloadUrl = solderUrl + @"mods/";
@@ -97,7 +99,14 @@ namespace MechZone_ModPack_Launcher_v2
                     profileBox.Items.Add(profile);
 
                 }
-                profileBox.SelectedIndex = Properties.Settings.Default.selectedProfile;
+
+                try
+                {
+                    profileBox.SelectedIndex = Properties.Settings.Default.selectedProfile;
+                } catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                }
 
                 themeSelector.SelectedIndex = Properties.Settings.Default.selectedTheme;
                 styleSelector.SelectedIndex = Properties.Settings.Default.selectedStyle;
@@ -248,16 +257,11 @@ namespace MechZone_ModPack_Launcher_v2
         {
             try
             {
-                JCdownloadList file = new JCdownloadList();
-                file.hash = "6f29ccf89a988d2b6952f32bd1f614c0";
-                file.saveLocations = new List<string>() { @"D:\temp\forge.zip" };
-                file.hashType = "md5";
-
-                FileStream fileCheck = File.OpenRead(file.saveLocations[0]);
-                SHA1 sha1 = new SHA1CryptoServiceProvider();
-                byte[] md5hash = sha1.ComputeHash(fileCheck);
-                fileCheck.Close();
-                Console.WriteLine(BitConverter.ToString(md5hash));
+                string regex = @"\[\d\d:\d\d:\d\d\]";
+                string text = @"[17:04:56] [Client thread/INFO]: [CHAT] fueller has just earned the achievement [Taking Inventory]";
+                Regex mypattern = new Regex(regex);
+                var test = mypattern.Match(text);
+                MessageBox.Show("");
             } catch (Exception ex)
             {
                 Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
@@ -438,30 +442,46 @@ namespace MechZone_ModPack_Launcher_v2
                 getNatives(selectedModPack, latestVersion.forgeVersion, latestVersion.minecraft);
                 getMods(selectedModPack, latestVersion);
 
-                DownloadForm dlf = new DownloadForm();
-                dlf.senderForm = this;
-                dlf.downloadList = downloadList;
-                dlf.location = location;
-                dlf.modpack = selectedModpack;
-                dlf.ShowDialog();
+                string fileLoc = location + "\\modpacks\\" + selectedModpack.name + "\\version.json";
+
+                if(!File.Exists(fileLoc))
+                {
+                    File.WriteAllText(fileLoc, JsonConvert.SerializeObject(new JCversion()));
+                }
+
+                string latestVersionString = selectedModpack.latest;
+                string localVersionString = JsonConvert.DeserializeObject<JCversion>(File.ReadAllText(fileLoc)).version;
+
+
+                if(!latestVersionString.Equals(localVersionString))
+                {
+                    DownloadForm dlf = new DownloadForm();
+                    dlf.senderForm = this;
+                    dlf.downloadList = downloadList;
+                    dlf.location = location;
+                    dlf.modpack = selectedModpack;
+                    dlf.ShowDialog(); 
+                }
 
                 //Close();
 
-                Process minecraft = new Process();
-                minecraft.StartInfo.UseShellExecute = false;
-                minecraft.StartInfo.RedirectStandardError = true;
+                ProcessStartInfo start = new ProcessStartInfo();
+                start.UseShellExecute = false;
+                start.RedirectStandardError = true;
+                start.RedirectStandardOutput = true;
 
-                minecraft.StartInfo.FileName = @"C:\Program Files\Java\jre8\bin\javaw.exe";
+                start.FileName = getJavaInstallationPath() + "\\bin\\javaw.exe";
+                
                 string workingDirectory = location + "\\modpacks\\" + selectedModpack.name;
-                Console.WriteLine(workingDirectory);
-                minecraft.StartInfo.WorkingDirectory = workingDirectory;
+
+                start.WorkingDirectory = workingDirectory;
 
                 string arguments = "";
                 arguments += "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump ";
                 arguments += "-Xmx4096m ";
                 arguments += "-XX:MaxPermSize=256m ";
                 arguments += @"-Djava.library.path=" + location + @"\modpacks\" + selectedModpack.name + @"\bin\" + latestVersion.minecraft + "-" + latestVersion.forgeVersion + "-natives ";
-                arguments += "-Dminecraft.applet.TargetDirectory=" + workingDirectory + " ";
+                //arguments += "-Dminecraft.applet.TargetDirectory=" + workingDirectory + " ";
                 arguments += "-cp ";
                 for(int i = 0; i < downloadList.Count; i++)
                 {
@@ -470,36 +490,7 @@ namespace MechZone_ModPack_Launcher_v2
                         arguments += downloadList[i].saveLocations[0] + ";";
                     }
                 }
-                //arguments += @"-cp " + location + @"\com\mojang\realms\1.2.9\realms-1.2.9.jar;"
-                //            + location + @"\org\apache\commons\commons-compress\1.8.1\commons-compress-1.8.1.jar;"
-                //            + location + @"\org\apache\httpcomponents\httpclient\4.3.3\httpclient-4.3.3.jar;"
-                //            + location + @"\commons-logging\commons-logging\1.1.3\commons-logging-1.1.3.jar;"
-                //            + location + @"\org\apache\httpcomponents\httpcore\4.3.2\httpcore-4.3.2.jar;"
-                //            + location + @"\java3d\vecmath\1.3.1\vecmath-1.3.1.jar;"
-                //            + location + @"\net\sf\trove4j\trove4j\3.0.3\trove4j-3.0.3.jar;"
-                //            + location + @"\com\ibm\icu\icu4j-core-mojang\51.2\icu4j-core-mojang-51.2.jar;"
-                //            + location + @"\net\sf\jopt-simple\jopt-simple\4.5\jopt-simple-4.5.jar;"
-                //            + location + @"\com\paulscode\codecjorbis\20101023\codecjorbis-20101023.jar;"
-                //            + location + @"\com\paulscode\codecwav\20101023\codecwav-20101023.jar;"
-                //            + location + @"\com\paulscode\libraryjavasound\20101123\libraryjavasound-20101123.jar;"
-                //            + location + @"\com\paulscode\librarylwjglopenal\20100824\librarylwjglopenal-20100824.jar;"
-                //            + location + @"\com\paulscode\soundsystem\20120107\soundsystem-20120107.jar;"
-                //            + location + @"\io\netty\netty-all\4.0.10.Final\netty-all-4.0.10.Final.jar;"
-                //            + location + @"\com\google\guava\guava\15.0\guava-15.0.jar;"
-                //            + location + @"\org\apache\commons\commons-lang3\3.1\commons-lang3-3.1.jar;"
-                //            + location + @"\commons-io\commons-io\2.4\commons-io-2.4.jar;"
-                //            + location + @"\commons-codec\commons-codec\1.9\commons-codec-1.9.jar;"
-                //            + location + @"\net\java\jinput\jinput\2.0.5\jinput-2.0.5.jar;"
-                //            + location + @"\net\java\jutils\jutils\1.0.0\jutils-1.0.0.jar;"
-                //            + location + @"\com\google\code\gson\gson\2.2.4\gson-2.2.4.jar;"
-                //            + location + @"\com\mojang\authlib\1.5.13\authlib-1.5.13.jar;"
-                //            + location + @"\org\apache\logging\log4j\log4j-api\2.0-beta9\log4j-api-2.0-beta9.jar;"
-                //            + location + @"\org\apache\logging\log4j\log4j-core\2.0-beta9\log4j-core-2.0-beta9.jar;"
-                //            + location + @"\org\lwjgl\lwjgl\lwjgl\2.9.1\lwjgl-2.9.1.jar;"
-                //            + location + @"\org\lwjgl\lwjgl\lwjgl_util\2.9.1\lwjgl_util-2.9.1.jar;"
-                //            + location + @"\tv\twitch\twitch\5.16\twitch-5.16.jar; ";
-                //arguments += @"C:\Users\Philip\AppData\Roaming\.mechzoneV2\modpacks\mechzone-modpack\bin\1.7.10.jar ";
-                arguments += location + @"\modpacks\mechzone-modpack\bin\minecraft.jar net.minecraft.client.main.Main ";
+                arguments += location + @"\modpacks\" + selectedModpack.name + "\\bin\\minecraft.jar net.minecraft.launchwrapper.Launch ";
                 arguments += "--username fueller ";
                 arguments += "--version 1.7.10 ";
                 arguments += "--gameDir " + workingDirectory + " ";
@@ -507,25 +498,76 @@ namespace MechZone_ModPack_Launcher_v2
                 arguments += "--assetIndex 1.7.10 ";
                 arguments += "--uuid 7d5e5b10011e4403b53f931d523375f3 ";
                 arguments += "--accessToken 92d11ff5516e4a909d25a854a7884ed0 ";
-                arguments += "--userProperties { } ";
+                arguments += "--userProperties {} ";
                 arguments += "--userType mojang ";
                 arguments += "--tweakClass cpw.mods.fml.common.launcher.FMLTweaker";
 
 
 
-                Console.WriteLine(arguments);
-                minecraft.StartInfo.Arguments = arguments;
-                minecraft.Start();
+                //Console.WriteLine(arguments);
+                start.Arguments = arguments;
 
-                while(!minecraft.StandardError.EndOfStream)
+                using (Process process = Process.Start(start))
                 {
-                    string line = minecraft.StandardError.ReadLine();
-                    Console.WriteLine(line);
+                    process.OutputDataReceived += Minecraft_OutputDataReceived;
+                    process.ErrorDataReceived += Minecraft_ErrorDataReceived;
+                    process.BeginErrorReadLine();
+                    process.BeginOutputReadLine();
                 }
             } catch (Exception ex)
             {
                 Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
             }
+        }
+
+        private void Minecraft_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            try
+            {
+                addLogText(e.Data, "error");
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+            }
+        }
+
+        private void Minecraft_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            try
+            {
+                addLogText(e.Data, "output");
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+            }
+        }
+
+        delegate void logTextAdd(string text, string type);
+
+        void addLogText(string text, string type)
+        {
+            if(InvokeRequired)
+            {
+                BeginInvoke(new logTextAdd(addLogText), new object[] { text, type });
+                return;
+            }
+
+            if(text == null)
+            {
+                return;
+            }
+
+            if(type.Equals("error") || text.Contains("Warning") || text.Contains("WARN"))
+            {
+                logTextBox.AppendText(text + "\n", Color.Red);
+            } else if(text.Contains("INFO"))
+            {
+                logTextBox.AppendText(text + "\n", Color.Blue);
+            }else
+            {
+                logTextBox.AppendText(text + "\n");
+            }
+            logTextBox.Focus();
         }
 
         private void getNatives(JCmodpackInfo selectedModPack, string forgeVersion, string minecraft)
@@ -679,7 +721,12 @@ namespace MechZone_ModPack_Launcher_v2
                     JCdownloadList data = new JCdownloadList();
                     if(g.versionInfo.libraries[i].url != null)
                     {
-                        data.link = g.versionInfo.libraries[i].url + dlLink;
+                        if(dlLink.Contains("net/minecraftforge/forge/"))
+                        {
+                            data.link = g.versionInfo.libraries[i].url + dlLink.Replace(".jar", "-universal.jar");
+                        } else {
+                            data.link = g.versionInfo.libraries[i].url + dlLink;
+                        }
                         if(g.versionInfo.libraries[i].checksums != null)
                         {
                             data.hash = g.versionInfo.libraries[i].checksums[0];
@@ -801,6 +848,69 @@ namespace MechZone_ModPack_Launcher_v2
                 {
                     return key.GetValue("JavaHome").ToString();
                 }
+            }
+        }
+
+        private void logTextBox_LinkClicked(object sender, LinkClickedEventArgs e)
+        {
+            try
+            {
+                Console.WriteLine(e.LinkText);
+                Process.Start(e.LinkText);
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+            }
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+
+            try
+            {
+                int item = Properties.Settings.Default.selectedProfile;
+                JCprofileSave save = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\\mz_launcher_profiles.json"));
+                string profile = profileBox.Items[item].ToString();
+                string uuid = "";
+                string name2 = "";
+                foreach(string name in save.profiles.Keys)
+                {
+                    if(name.Equals(profile))
+                    {
+                        uuid = save.profiles[name].playerUUID;
+                        name2 = name;
+                        
+                    }
+                }
+
+                save.authenticationDatabase.Remove(uuid);
+                save.profiles.Remove(name2);
+                File.WriteAllText(location + @"\\mz_launcher_profiles.json", JsonConvert.SerializeObject(save,Formatting.Indented));
+
+                profileBox.Items.Remove(profileBox.Items[item]);
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+            }
+
+        }
+    }
+
+    public static class RichTextBoxExtensions
+    {
+        public static void AppendText(this RichTextBox box, string text, Color color)
+        {
+            try
+            {
+                box.SelectionStart = box.TextLength;
+                box.SelectionLength = 0;
+
+                box.SelectionColor = color;
+                box.AppendText(text);
+                box.SelectionColor = box.ForeColor;
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
             }
         }
     }

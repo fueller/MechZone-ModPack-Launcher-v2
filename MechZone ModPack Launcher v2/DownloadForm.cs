@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using Ionic.Zip;
+using Newtonsoft.Json;
 
 namespace MechZone_ModPack_Launcher_v2
 {
@@ -62,6 +63,7 @@ namespace MechZone_ModPack_Launcher_v2
                 _items.Enqueue(DownloadList[i]);
             }
             allFileProgress.Maximum = _items.Count;
+            allFileProgress.Value = 0;
             metroLabel1.Text = "Downloading File " + 1 + " from " + _items.Count;
             singleFileProgress.Value = 0;            
             downloadSpeed.Text = string.Format("{0} kb/s", 0);
@@ -128,7 +130,33 @@ namespace MechZone_ModPack_Launcher_v2
             Thread.Sleep(1);
             copyFiles();
             unzipMods();
+            createVersionFile();
             Close();
+        }
+
+        private void createVersionFile()
+        {
+            try
+            {
+                string fileLoc = saveLocation + "\\modpacks\\" + Modpack.name + "\\version.json";
+                if(!File.Exists(fileLoc))
+                {
+                    File.Create(fileLoc);
+                    JCversion ver = new JCversion();
+                    ver.version = Modpack.latest;
+                    string outp = JsonConvert.SerializeObject(ver);
+                    File.WriteAllText(fileLoc, outp);
+                } else
+                {
+                    JCversion ver = JsonConvert.DeserializeObject<JCversion>(File.ReadAllText(fileLoc));
+                    ver.version = Modpack.latest;
+                    string outp = JsonConvert.SerializeObject(ver);
+                    File.WriteAllText(fileLoc, outp);
+                }
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+            }
         }
 
         private void unzipMods()
@@ -165,7 +193,8 @@ namespace MechZone_ModPack_Launcher_v2
                             e.Extract(output);
                         }
                     }
-                } 
+                }
+                this.Update();
             }
         }
 
@@ -197,7 +226,7 @@ namespace MechZone_ModPack_Launcher_v2
         private void Client_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
         {
             allFileProgress.PerformStep();
-            metroLabel1.Text = "Downloading File " + allFileProgress.Value + " from " + allFileProgress.Maximum + ". Remaining: " + _items.Count;
+            metroLabel1.Text = "Downloading File " + allFileProgress.Value + " from " + allFileProgress.Maximum;
             if(e != null)
             {
                 if(e.Error != null)

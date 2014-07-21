@@ -33,6 +33,8 @@
             this.mainTabControl = new MetroFramework.Controls.MetroTabControl();
             this.infoTabPage = new MetroFramework.Controls.MetroTabPage();
             this.infoWebBrowser = new System.Windows.Forms.WebBrowser();
+            this.logTabPage = new MetroFramework.Controls.MetroTabPage();
+            this.logTextBox = new System.Windows.Forms.RichTextBox();
             this.modPacksTabPage = new MetroFramework.Controls.MetroTabPage();
             this.modPacksContainer = new MetroFramework.Controls.MetroPanel();
             this.optionsTabPage = new MetroFramework.Controls.MetroTabPage();
@@ -45,11 +47,15 @@
             this.loginButton = new MetroFramework.Controls.MetroButton();
             this.profileBox = new MetroFramework.Controls.MetroComboBox();
             this.addProfile = new MetroFramework.Controls.MetroButton();
+            this.profileContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.mainTabControl.SuspendLayout();
             this.infoTabPage.SuspendLayout();
+            this.logTabPage.SuspendLayout();
             this.modPacksTabPage.SuspendLayout();
             this.optionsTabPage.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).BeginInit();
+            this.profileContextMenu.SuspendLayout();
             this.SuspendLayout();
             // 
             // mainTabControl
@@ -57,9 +63,10 @@
             this.mainTabControl.Controls.Add(this.infoTabPage);
             this.mainTabControl.Controls.Add(this.modPacksTabPage);
             this.mainTabControl.Controls.Add(this.optionsTabPage);
+            this.mainTabControl.Controls.Add(this.logTabPage);
             this.mainTabControl.Location = new System.Drawing.Point(23, 63);
             this.mainTabControl.Name = "mainTabControl";
-            this.mainTabControl.SelectedIndex = 0;
+            this.mainTabControl.SelectedIndex = 3;
             this.mainTabControl.Size = new System.Drawing.Size(1092, 467);
             this.mainTabControl.TabIndex = 0;
             // 
@@ -87,6 +94,31 @@
             this.infoWebBrowser.Url = new System.Uri("http://mechzone.net/modpack/launcher/info/info.html", System.UriKind.Absolute);
             this.infoWebBrowser.WebBrowserShortcutsEnabled = false;
             this.infoWebBrowser.Navigating += new System.Windows.Forms.WebBrowserNavigatingEventHandler(this.infoWebBrowser_Navigating);
+            // 
+            // logTabPage
+            // 
+            this.logTabPage.Controls.Add(this.logTextBox);
+            this.logTabPage.HorizontalScrollbarBarColor = true;
+            this.logTabPage.HorizontalScrollbarSize = 0;
+            this.logTabPage.Location = new System.Drawing.Point(4, 35);
+            this.logTabPage.Name = "logTabPage";
+            this.logTabPage.Size = new System.Drawing.Size(1084, 428);
+            this.logTabPage.TabIndex = 3;
+            this.logTabPage.Text = "Log";
+            this.logTabPage.VerticalScrollbarBarColor = true;
+            this.logTabPage.VerticalScrollbarSize = 0;
+            // 
+            // logTextBox
+            // 
+            this.logTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.logTextBox.Location = new System.Drawing.Point(0, 0);
+            this.logTextBox.Name = "logTextBox";
+            this.logTextBox.ReadOnly = true;
+            this.logTextBox.Size = new System.Drawing.Size(1084, 428);
+            this.logTextBox.TabIndex = 2;
+            this.logTextBox.Text = "";
+            this.logTextBox.WordWrap = false;
+            this.logTextBox.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.logTextBox_LinkClicked);
             // 
             // modPacksTabPage
             // 
@@ -192,6 +224,7 @@
             // 
             // profileBox
             // 
+            this.profileBox.ContextMenuStrip = this.profileContextMenu;
             this.profileBox.FormattingEnabled = true;
             this.profileBox.ItemHeight = 23;
             this.profileBox.Location = new System.Drawing.Point(857, 532);
@@ -208,6 +241,20 @@
             this.addProfile.TabIndex = 4;
             this.addProfile.Text = "Add Profile";
             this.addProfile.Click += new System.EventHandler(this.addProfile_Click);
+            // 
+            // profileContextMenu
+            // 
+            this.profileContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripMenuItem1});
+            this.profileContextMenu.Name = "profileContextMenu";
+            this.profileContextMenu.Size = new System.Drawing.Size(153, 48);
+            // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
+            this.toolStripMenuItem1.Text = "deleteProfile";
+            this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
             // 
             // mainWindow
             // 
@@ -231,10 +278,12 @@
             this.Shown += new System.EventHandler(this.mainWindow_Shown);
             this.mainTabControl.ResumeLayout(false);
             this.infoTabPage.ResumeLayout(false);
+            this.logTabPage.ResumeLayout(false);
             this.modPacksTabPage.ResumeLayout(false);
             this.optionsTabPage.ResumeLayout(false);
             this.optionsTabPage.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).EndInit();
+            this.profileContextMenu.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -256,6 +305,10 @@
         private MetroFramework.Controls.MetroButton addProfile;
         private MetroFramework.Controls.MetroComboBox profileBox;
         private MetroFramework.Controls.MetroButton loginButton;
+        private MetroFramework.Controls.MetroTabPage logTabPage;
+        private System.Windows.Forms.RichTextBox logTextBox;
+        private System.Windows.Forms.ContextMenuStrip profileContextMenu;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
     }
 }
 
