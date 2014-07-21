@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using Ionic.Zip;
 
 namespace MechZone_ModPack_Launcher_v2
 {
@@ -18,6 +19,8 @@ namespace MechZone_ModPack_Launcher_v2
         MetroForm SenderForm;
         List<JCdownloadList> DownloadList;
         Stopwatch sw = new Stopwatch();
+        string saveLocation;
+        JCmodpackInfo Modpack;
 
         public DownloadForm()
         {
@@ -32,6 +35,14 @@ namespace MechZone_ModPack_Launcher_v2
         public List<JCdownloadList> downloadList
         {
             set { DownloadList = value; Invalidate(); }
+        }
+        public string location
+        {
+            set { saveLocation = value; Invalidate(); }
+        }
+        public JCmodpackInfo modpack
+        {
+            set { Modpack = value; Invalidate(); }
         }
 
 
@@ -98,8 +109,64 @@ namespace MechZone_ModPack_Launcher_v2
             }
 
             Console.WriteLine("done downloads");
+            downloadSpeed.Text = "";
+            labelDownload.Text = "";
+            int numUnzip = 0;
+            for(int i = 0; i < DownloadList.Count; i++)
+            {
+                if(DownloadList[i].type.Equals("mods") || DownloadList[i].type.Equals("natives") || DownloadList[i].saveLocations.Count > 1)
+                {
+                    numUnzip++;
+                }
+            }
+            metroLabel1.Text = "Unzipping File " + 1 + " from " + numUnzip;
+            allFileProgress.Maximum = numUnzip;
+            allFileProgress.Value = 0;
+            singleFileProgress.Maximum = 100;
+            singleFileProgress.Value = 50;
+            this.Update();
+            Thread.Sleep(1);
             copyFiles();
+            unzipMods();
             Close();
+        }
+
+        private void unzipMods()
+        {
+            for(int i = 0; i < DownloadList.Count; i++)
+            {
+                
+                if(DownloadList[i].type.Equals("natives"))
+                {
+                    allFileProgress.PerformStep();
+                    metroLabel1.Text = "Unzipping File " + allFileProgress.Value + " from " + allFileProgress.Maximum;
+                    
+                    using (ZipFile zip = ZipFile.Read(DownloadList[i].saveLocations[0]))
+                    {
+                        string output = saveLocation + "\\modpacks\\" + Modpack.name + "\\bin\\";
+                        foreach(ZipEntry e in zip)
+                        {
+                            e.ExtractExistingFile = ExtractExistingFileAction.OverwriteSilently;
+                            e.Extract(output);
+                        }
+                    }
+                }
+                if(DownloadList[i].type.Equals("mods"))
+                {
+                    allFileProgress.PerformStep();
+                    metroLabel1.Text = "Unzipping File " + allFileProgress.Value + " from " + allFileProgress.Maximum;
+                    
+                    using (ZipFile zip = ZipFile.Read(DownloadList[i].saveLocations[0]))
+                    {
+                        string output = saveLocation + "\\modpacks\\" + Modpack.name + "\\";
+                        foreach(ZipEntry e in zip)
+                        {
+                            e.ExtractExistingFile = ExtractExistingFileAction.OverwriteSilently;
+                            e.Extract(output);
+                        }
+                    }
+                } 
+            }
         }
 
         private void copyFiles()
@@ -108,8 +175,14 @@ namespace MechZone_ModPack_Launcher_v2
             {
                 if(DownloadList[i].saveLocations.Count > 1)
                 {
+                    allFileProgress.PerformStep();
+                    metroLabel1.Text = "Unzipping File " + allFileProgress.Value + " from " + allFileProgress.Maximum;
                     for(int j = 1; j < DownloadList[i].saveLocations.Count; j++)
                     {
+                        if(File.Exists(DownloadList[i].saveLocations[j]))
+                        {
+                            continue;
+                        }
                         string outputFolder = Path.GetDirectoryName(DownloadList[i].saveLocations[j]);
                         if(!Directory.Exists(outputFolder))
                         {
@@ -123,7 +196,6 @@ namespace MechZone_ModPack_Launcher_v2
 
         private void Client_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
         {
-            Console.WriteLine("download Done");
             allFileProgress.PerformStep();
             metroLabel1.Text = "Downloading File " + allFileProgress.Value + " from " + allFileProgress.Maximum + ". Remaining: " + _items.Count;
             if(e != null)
@@ -136,7 +208,6 @@ namespace MechZone_ModPack_Launcher_v2
                 {
                     Console.WriteLine("canceled");
                 }
-                Console.WriteLine(e.GetType());
             }
             downloadItem();
         }

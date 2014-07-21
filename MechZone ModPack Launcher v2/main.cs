@@ -31,39 +31,43 @@ namespace MechZone_ModPack_Launcher_v2
         JCmodpacks aviableModpacks = new JCmodpacks();
         Dictionary<string, JCmodpackInfo> modPackInfos = new Dictionary<string, JCmodpackInfo>();
         string appdata;
-        string solderApiUrl = @"http://solder.mechzone.net/index.php/api/";
+        string solderUrl = @"http://solder.mechzone.net/";
+        string solderApiUrl;
+        string modDownloadUrl;
         string location = "%appdata%/.mechzoneV2";
         Guid uuid;
         //Dictionary<string, JCdownloadList> downloadList = new Dictionary<string, JCdownloadList>();
         List<JCdownloadList> downloadList = new List<JCdownloadList>();
         JCmodpackInfo selectedModpack = new JCmodpackInfo();
-        
+
 
         public mainWindow()
         {
             try
             {
-                
+
                 InitializeComponent();
                 appdata = Environment.GetEnvironmentVariable("appdata");
                 Console.WriteLine(Environment.GetEnvironmentVariable("JAVA_HOME"));
                 location = appdata + "\\.mechzoneV2";
+                solderApiUrl = solderUrl + @"index.php/api/";
+                modDownloadUrl = solderUrl + @"mods/";
                 if(!Directory.Exists(location))
                 {
                     Directory.CreateDirectory(location);
                 }
 
-                if(!File.Exists(location + @"\launcher_profiles.json"))
+                if(!File.Exists(location + @"\mz_launcher_profiles.json"))
                 {
                     JCprofileSave text = new JCprofileSave();
                     Guid g = Guid.NewGuid();
                     text.clientToken = g;
                     text.profiles = new Dictionary<string, profileInfo>();
                     text.authenticationDatabase = new Dictionary<string, userInfo>();
-                    File.WriteAllText(location + @"\launcher_profiles.json", JsonConvert.SerializeObject(text, Formatting.Indented));
+                    File.WriteAllText(location + @"\mz_launcher_profiles.json", JsonConvert.SerializeObject(text, Formatting.Indented));
                 }
 
-                JCprofileSave uuidRead = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\launcher_profiles.json"));
+                JCprofileSave uuidRead = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\mz_launcher_profiles.json"));
                 uuid = uuidRead.clientToken;
                 Icon = Properties.Resources.taskbarIcon;
                 this.Text = this.Text + " " + (ApplicationDeployment.IsNetworkDeployed ? ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString() : Assembly.GetExecutingAssembly().GetName().Version.ToString());
@@ -86,7 +90,7 @@ namespace MechZone_ModPack_Launcher_v2
                     themeSelector.Items.Add(color);
                 }
 
-                JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\launcher_profiles.json"));
+                JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\mz_launcher_profiles.json"));
                 profileBox.Items.Clear();
                 foreach(string profile in profiles.profiles.Keys)
                 {
@@ -163,7 +167,7 @@ namespace MechZone_ModPack_Launcher_v2
             {
                 Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
             }
-            
+
         }
 
         private void modpackSelected(object sender, EventArgs e)
@@ -344,7 +348,7 @@ namespace MechZone_ModPack_Launcher_v2
                 return null;
             }
         }
-#endregion
+        #endregion
 
         #region theme and style
         private void styleSelector_SelectedIndexChanged(object sender, EventArgs e)
@@ -374,7 +378,7 @@ namespace MechZone_ModPack_Launcher_v2
                 DialogResult res = form.ShowDialog();
                 if(res == DialogResult.OK)
                 {
-                    JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\launcher_profiles.json"));
+                    JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\mz_launcher_profiles.json"));
                     profileBox.Items.Clear();
                     foreach(string profile in profiles.profiles.Keys)
                     {
@@ -410,9 +414,9 @@ namespace MechZone_ModPack_Launcher_v2
                 JCrefreshResponse response = refresh(user.accessToken, uuid);
                 if(response != null)
                 {
-                    JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\launcher_profiles.json"));
+                    JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\mz_launcher_profiles.json"));
                     profiles.authenticationDatabase[response.selectedProfile.id].accessToken = response.accessToken;
-                    File.WriteAllText(location + @"\launcher_profiles.json", JsonConvert.SerializeObject(profiles, Formatting.Indented));
+                    File.WriteAllText(location + @"\mz_launcher_profiles.json", JsonConvert.SerializeObject(profiles, Formatting.Indented));
                 }
                 launchModPack(user, selectedModpack);
             } catch (Exception ex)
@@ -429,85 +433,113 @@ namespace MechZone_ModPack_Launcher_v2
                 JCmodpackVersion latestVersion = getLatestModPackVersion(selectedModPack);
                 getMinecraft(selectedModpack, latestVersion.minecraft);
                 getAssetsForVersion(latestVersion.minecraft);
-                getLibrariesForVersion(latestVersion.minecraft);
-                getForge(selectedModpack, latestVersion.forgeVersion, latestVersion.minecraft);
+                getLibrariesForVersion(latestVersion.minecraft, latestVersion.forgeVersion);
+                ////getForge(selectedModpack, latestVersion.forgeVersion, latestVersion.minecraft);
+                getNatives(selectedModPack, latestVersion.forgeVersion, latestVersion.minecraft);
+                getMods(selectedModPack, latestVersion);
 
                 DownloadForm dlf = new DownloadForm();
                 dlf.senderForm = this;
                 dlf.downloadList = downloadList;
+                dlf.location = location;
+                dlf.modpack = selectedModpack;
                 dlf.ShowDialog();
 
-                Close();
+                //Close();
 
                 Process minecraft = new Process();
                 minecraft.StartInfo.UseShellExecute = false;
                 minecraft.StartInfo.RedirectStandardError = true;
-                
+
                 minecraft.StartInfo.FileName = @"C:\Program Files\Java\jre8\bin\javaw.exe";
                 string workingDirectory = location + "\\modpacks\\" + selectedModpack.name;
                 Console.WriteLine(workingDirectory);
-                //minecraft.StartInfo.WorkingDirectory = workingDirectory;
+                minecraft.StartInfo.WorkingDirectory = workingDirectory;
 
                 string arguments = "";
                 arguments += "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump ";
                 arguments += "-Xmx4096m ";
                 arguments += "-XX:MaxPermSize=256m ";
-                arguments += @"-Djava.library.path=C:\Users\Philip\AppData\Roaming\.technic\modpacks\mechzone-modpack\bin\natives ";
-                arguments += "-Dfml.core.libraries.mirror=http://mirror.technicpack.net/Technic/lib/fml/%s ";
+                arguments += @"-Djava.library.path=" + location + @"\modpacks\" + selectedModpack.name + @"\bin\" + latestVersion.minecraft + "-" + latestVersion.forgeVersion + "-natives ";
                 arguments += "-Dminecraft.applet.TargetDirectory=" + workingDirectory + " ";
-                arguments += @"-cp C:\Users\Philip\AppData\Roaming\.technic\cache\com\mojang\realms\1.2.9\realms-1.2.9.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\org\apache\commons\commons-compress\1.8.1\commons-compress-1.8.1.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\org\apache\httpcomponents\httpclient\4.3.3\httpclient-4.3.3.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\commons-logging\commons-logging\1.1.3\commons-logging-1.1.3.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\org\apache\httpcomponents\httpcore\4.3.2\httpcore-4.3.2.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\java3d\vecmath\1.3.1\vecmath-1.3.1.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\net\sf\trove4j\trove4j\3.0.3\trove4j-3.0.3.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\com\ibm\icu\icu4j-core-mojang\51.2\icu4j-core-mojang-51.2.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\net\sf\jopt-simple\jopt-simple\4.5\jopt-simple-4.5.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\com\paulscode\codecjorbis\20101023\codecjorbis-20101023.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\com\paulscode\codecwav\20101023\codecwav-20101023.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\com\paulscode\libraryjavasound\20101123\libraryjavasound-20101123.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\com\paulscode\librarylwjglopenal\20100824\librarylwjglopenal-20100824.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\com\paulscode\soundsystem\20120107\soundsystem-20120107.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\io\netty\netty-all\4.0.10.Final\netty-all-4.0.10.Final.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\com\google\guava\guava\15.0\guava-15.0.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\org\apache\commons\commons-lang3\3.1\commons-lang3-3.1.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\commons-io\commons-io\2.4\commons-io-2.4.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\commons-codec\commons-codec\1.9\commons-codec-1.9.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\net\java\jinput\jinput\2.0.5\jinput-2.0.5.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\net\java\jutils\jutils\1.0.0\jutils-1.0.0.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\com\google\code\gson\gson\2.2.4\gson-2.2.4.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\com\mojang\authlib\1.5.13\authlib-1.5.13.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\org\apache\logging\log4j\log4j-api\2.0-beta9\log4j-api-2.0-beta9.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\org\apache\logging\log4j\log4j-core\2.0-beta9\log4j-core-2.0-beta9.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\org\lwjgl\lwjgl\lwjgl\2.9.1\lwjgl-2.9.1.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\org\lwjgl\lwjgl\lwjgl_util\2.9.1\lwjgl_util-2.9.1.jar;"
-                            + @"C:\Users\Philip\AppData\Roaming\.technic\cache\tv\twitch\twitch\5.16\twitch-5.16.jar; ";
+                arguments += "-cp ";
+                for(int i = 0; i < downloadList.Count; i++)
+                {
+                    if(downloadList[i].type.Equals("libraries"))
+                    {
+                        arguments += downloadList[i].saveLocations[0] + ";";
+                    }
+                }
+                //arguments += @"-cp " + location + @"\com\mojang\realms\1.2.9\realms-1.2.9.jar;"
+                //            + location + @"\org\apache\commons\commons-compress\1.8.1\commons-compress-1.8.1.jar;"
+                //            + location + @"\org\apache\httpcomponents\httpclient\4.3.3\httpclient-4.3.3.jar;"
+                //            + location + @"\commons-logging\commons-logging\1.1.3\commons-logging-1.1.3.jar;"
+                //            + location + @"\org\apache\httpcomponents\httpcore\4.3.2\httpcore-4.3.2.jar;"
+                //            + location + @"\java3d\vecmath\1.3.1\vecmath-1.3.1.jar;"
+                //            + location + @"\net\sf\trove4j\trove4j\3.0.3\trove4j-3.0.3.jar;"
+                //            + location + @"\com\ibm\icu\icu4j-core-mojang\51.2\icu4j-core-mojang-51.2.jar;"
+                //            + location + @"\net\sf\jopt-simple\jopt-simple\4.5\jopt-simple-4.5.jar;"
+                //            + location + @"\com\paulscode\codecjorbis\20101023\codecjorbis-20101023.jar;"
+                //            + location + @"\com\paulscode\codecwav\20101023\codecwav-20101023.jar;"
+                //            + location + @"\com\paulscode\libraryjavasound\20101123\libraryjavasound-20101123.jar;"
+                //            + location + @"\com\paulscode\librarylwjglopenal\20100824\librarylwjglopenal-20100824.jar;"
+                //            + location + @"\com\paulscode\soundsystem\20120107\soundsystem-20120107.jar;"
+                //            + location + @"\io\netty\netty-all\4.0.10.Final\netty-all-4.0.10.Final.jar;"
+                //            + location + @"\com\google\guava\guava\15.0\guava-15.0.jar;"
+                //            + location + @"\org\apache\commons\commons-lang3\3.1\commons-lang3-3.1.jar;"
+                //            + location + @"\commons-io\commons-io\2.4\commons-io-2.4.jar;"
+                //            + location + @"\commons-codec\commons-codec\1.9\commons-codec-1.9.jar;"
+                //            + location + @"\net\java\jinput\jinput\2.0.5\jinput-2.0.5.jar;"
+                //            + location + @"\net\java\jutils\jutils\1.0.0\jutils-1.0.0.jar;"
+                //            + location + @"\com\google\code\gson\gson\2.2.4\gson-2.2.4.jar;"
+                //            + location + @"\com\mojang\authlib\1.5.13\authlib-1.5.13.jar;"
+                //            + location + @"\org\apache\logging\log4j\log4j-api\2.0-beta9\log4j-api-2.0-beta9.jar;"
+                //            + location + @"\org\apache\logging\log4j\log4j-core\2.0-beta9\log4j-core-2.0-beta9.jar;"
+                //            + location + @"\org\lwjgl\lwjgl\lwjgl\2.9.1\lwjgl-2.9.1.jar;"
+                //            + location + @"\org\lwjgl\lwjgl\lwjgl_util\2.9.1\lwjgl_util-2.9.1.jar;"
+                //            + location + @"\tv\twitch\twitch\5.16\twitch-5.16.jar; ";
                 //arguments += @"C:\Users\Philip\AppData\Roaming\.mechzoneV2\modpacks\mechzone-modpack\bin\1.7.10.jar ";
-                arguments += @"C:\Users\Philip\AppData\Roaming\.technic\modpacks\mechzone-modpack\bin\minecraft.jar net.minecraft.client.main.Main ";
+                arguments += location + @"\modpacks\mechzone-modpack\bin\minecraft.jar net.minecraft.client.main.Main ";
                 arguments += "--username fueller ";
                 arguments += "--version 1.7.10 ";
                 arguments += "--gameDir " + workingDirectory + " ";
-                arguments += @"--assetsDir C:\Users\Philip\AppData\Roaming\.technic\assets ";
+                arguments += "--assetsDir " + location + @"\assets ";
                 arguments += "--assetIndex 1.7.10 ";
                 arguments += "--uuid 7d5e5b10011e4403b53f931d523375f3 ";
                 arguments += "--accessToken 92d11ff5516e4a909d25a854a7884ed0 ";
                 arguments += "--userProperties { } ";
                 arguments += "--userType mojang ";
-                arguments += "--title MechZone ModPack ";
-                arguments += @"--icon C:\Users\Philip\AppData\Roaming\.technic\assets/packs/mechzone-modpack/icon.png";
+                arguments += "--tweakClass cpw.mods.fml.common.launcher.FMLTweaker";
 
 
 
                 Console.WriteLine(arguments);
                 minecraft.StartInfo.Arguments = arguments;
-                //minecraft.Start();
+                minecraft.Start();
 
                 while(!minecraft.StandardError.EndOfStream)
                 {
                     string line = minecraft.StandardError.ReadLine();
                     Console.WriteLine(line);
                 }
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+            }
+        }
+
+        private void getNatives(JCmodpackInfo selectedModPack, string forgeVersion, string minecraft)
+        {
+            try
+            {
+                JCdownloadList data = new JCdownloadList();
+                data.link = "http://solder.mechzone.net/natives/" + minecraft + "-" + forgeVersion + "-natives.zip";
+                data.hash = getStringFromUrl("http://solder.mechzone.net/natives/" + minecraft + "-" + forgeVersion + "-natives.zip.sha1");
+                data.hashType = "sha1";
+                data.type = "natives";
+                data.saveLocations = new List<string>();
+                data.saveLocations.Add(location + "\\temp\\" + "natives-" + minecraft + "-" + forgeVersion + ".zip");
+                downloadList.Add(data);
             } catch (Exception ex)
             {
                 Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
@@ -526,7 +558,7 @@ namespace MechZone_ModPack_Launcher_v2
         {
             try
             {
-                JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\launcher_profiles.json"));
+                JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\mz_launcher_profiles.json"));
                 string selectedKey = null;
                 foreach(string key in profiles.profiles.Keys)
                 {
@@ -585,6 +617,16 @@ namespace MechZone_ModPack_Launcher_v2
                 string web = getStringFromUrl("https://s3.amazonaws.com/Minecraft.Download/indexes/" + version + ".json");
                 string startLink = "http://resources.download.minecraft.net/";
                 JCassets json = JsonConvert.DeserializeObject<JCassets>(web);
+                downloadList.Add(new JCdownloadList()
+                {
+                    link = "https://s3.amazonaws.com/Minecraft.Download/indexes/" + version + ".json",
+                    hash = "",
+                    hashType = "",
+                    saveLocations = new List<string>() { location + "\\assets\\indexes\\" + version + ".json" },
+                    type = "assets"
+
+                });
+
                 foreach(String key in json.objects.Keys)
                 {
                     try
@@ -597,7 +639,7 @@ namespace MechZone_ModPack_Launcher_v2
                         data.type = "assets";
                         data.saveLocations = new List<string>();
                         data.saveLocations.Add(location + "\\assets\\objects\\" + json.objects[key].hash.Substring(0, 2) + "\\" + json.objects[key].hash);
-                        data.saveLocations.Add(location + "\\assets\\legacy\\" + key.Replace('/','\\'));
+                        //data.saveLocations.Add(location + "\\assets\\virtual\\legacy\\" + key.Replace('/', '\\'));
                         downloadList.Add(data);
                     } catch (Exception ex)
                     {
@@ -612,33 +654,52 @@ namespace MechZone_ModPack_Launcher_v2
             }
         }
 
-        private void getLibrariesForVersion(string version)
+        private void getLibrariesForVersion(string version, string forgeVersion)
         {
             try
             {
-                string dlUrl = "http://s3.amazonaws.com/Minecraft.Download/versions/" + version + "/" + version + ".json";
+                //string dlUrl = "http://s3.amazonaws.com/Minecraft.Download/versions/" + version + "/" + version + ".json";
+                string dlUrl = "http://solder.mechzone.net/install_profile/" + version + "-" + forgeVersion + ".json";
+                Console.WriteLine(dlUrl);
                 string json = getStringFromUrl(dlUrl);
                 JCmcInfo g = JsonConvert.DeserializeObject<JCmcInfo>(json);
-                for(int i = 0; i < g.libraries.Count; i++)
+                for(int i = 0; i < g.versionInfo.libraries.Count; i++)
                 {
                     string dlLink = "";
-                    string[] parts = g.libraries[i].name.Split(':');
+                    string[] parts = g.versionInfo.libraries[i].name.Split(':');
                     dlLink += parts[0].Replace('.', '/') + "/";
                     dlLink += parts[1] + "/";
                     dlLink += parts[2] + "/";
                     dlLink += parts[1] + "-" + parts[2];
-                    if(g.libraries[i].natives != null)
+                    if(g.versionInfo.libraries[i].natives != null)
                     {
-                        dlLink += "-" + g.libraries[i].natives.windows.Replace("${arch}","64");
+                        dlLink += "-" + g.versionInfo.libraries[i].natives.windows.Replace("${arch}", "64");
                     }
                     dlLink += ".jar";
                     JCdownloadList data = new JCdownloadList();
-                    data.link = ("https://libraries.minecraft.net/" + dlLink);
-                    data.hash = getStringFromUrl("https://libraries.minecraft.net/" + dlLink + ".sha1");
-                    data.hashType = "sha1";
+                    if(g.versionInfo.libraries[i].url != null)
+                    {
+                        data.link = g.versionInfo.libraries[i].url + dlLink;
+                        if(g.versionInfo.libraries[i].checksums != null)
+                        {
+                            data.hash = g.versionInfo.libraries[i].checksums[0];
+                            data.hashType = "";
+                        } else
+                        {
+                            data.hash = "";
+                            data.hashType = "";
+                        }
+                    } else
+                    {
+                        data.link = ("https://libraries.minecraft.net/" + dlLink);
+                        data.hash = getStringFromUrl("https://libraries.minecraft.net/" + dlLink + ".sha1");
+                        data.hashType = "sha1";
+                    }
+
+
                     data.type = "libraries";
                     data.saveLocations = new List<string>();
-                    data.saveLocations.Add(location + "\\temp\\" + dlLink);
+                    data.saveLocations.Add(location + "\\libraries\\" + dlLink);
                     downloadList.Add(data);
 
                 }
@@ -669,7 +730,7 @@ namespace MechZone_ModPack_Launcher_v2
                 data.hash = getStringFromUrl(dllink + ".sha1");
                 data.hashType = "sha1";
                 data.saveLocations = new List<string>();
-                data.saveLocations.Add(location + "\\modpacks\\" + modpack.name + "\\libraries\\net\\minecraftforge\\minecraftforge\\" + forgeVersion + "\\minecraftforge-" + forgeVersion + ".jar");
+                data.saveLocations.Add(location + "\\libraries\\net\\minecraftforge\\minecraftforge\\" + forgeVersion + "\\minecraftforge-" + forgeVersion + ".jar");
                 data.type = "forge";
                 downloadList.Add(data);
 
@@ -681,20 +742,47 @@ namespace MechZone_ModPack_Launcher_v2
 
         private void getMinecraft(JCmodpackInfo modpack, string minecraftVersion)
         {
-            string dllink = "http://s3.amazonaws.com/Minecraft.Download/versions/";
-            dllink += minecraftVersion;
-            dllink += "/";
-            dllink += minecraftVersion;
-            dllink += ".jar";
-            JCdownloadList data = new JCdownloadList();
-            data.link = dllink;
-            data.hash = "";
-            data.hashType = "";
-            data.saveLocations = new List<string>();
-            data.saveLocations.Add(location + "\\modpacks\\" + modpack.name + "\\bin\\minecraft.jar");
-            data.type = "minecraft";
-            downloadList.Add(data);
+            try
+            {
+                string dllink = "http://s3.amazonaws.com/Minecraft.Download/versions/";
+                dllink += minecraftVersion;
+                dllink += "/";
+                dllink += minecraftVersion;
+                dllink += ".jar";
+                JCdownloadList data = new JCdownloadList();
+                data.link = dllink;
+                data.hash = "";
+                data.hashType = "";
+                data.saveLocations = new List<string>();
+                data.saveLocations.Add(location + "\\modpacks\\" + modpack.name + "\\bin\\minecraft.jar");
+                data.type = "minecraft";
+                downloadList.Add(data);
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+            }
 
+        }
+
+        private void getMods(JCmodpackInfo modpack, JCmodpackVersion build)
+        {
+            try
+            {
+                for(int i = 0; i < build.mods.Count; i++)
+                {
+                    JCdownloadList data = new JCdownloadList();
+                    data.hash = build.mods[i].md5;
+                    data.hashType = "md5";
+                    data.link = build.mods[i].url;
+                    data.saveLocations = new List<string>();
+                    data.saveLocations.Add(location + "\\temp\\" + build.mods[i].name + "-" + build.mods[i].version + ".zip");
+                    data.type = "mods";
+                    downloadList.Add(data);
+                }
+            } catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+            }
         }
 
         private string getJavaInstallationPath()

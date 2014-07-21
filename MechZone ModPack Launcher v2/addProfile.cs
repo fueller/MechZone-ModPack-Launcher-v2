@@ -61,7 +61,7 @@ namespace MechZone_ModPack_Launcher_v2
                     jsonClasses.JCauthenticateResponse res = mainWindow.authenticate(username.Text, password.Text, uuid);
                     if(res != null)
                     {
-                        jsonClasses.JCprofileSave file = JsonConvert.DeserializeObject<jsonClasses.JCprofileSave>(File.ReadAllText(location + @"\launcher_profiles.json"));
+                        jsonClasses.JCprofileSave file = JsonConvert.DeserializeObject<jsonClasses.JCprofileSave>(File.ReadAllText(location + @"\mz_launcher_profiles.json"));
 
                         //profile
                         jsonClasses.profileInfo profile = new jsonClasses.profileInfo();
@@ -80,7 +80,7 @@ namespace MechZone_ModPack_Launcher_v2
                         file.selectedProfile = res.selectedProfile.name;
 
                         string text = JsonConvert.SerializeObject(file, Formatting.Indented);
-                        File.WriteAllText(location + @"\launcher_profiles.json", text);
+                        File.WriteAllText(location + @"\mz_launcher_profiles.json", text);
 
                         this.DialogResult = DialogResult.OK;
                         this.Close();
@@ -101,6 +101,11 @@ namespace MechZone_ModPack_Launcher_v2
         {
             this.DialogResult = DialogResult.Cancel;
             this.Close();
+        }
+
+        private void addProfile_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

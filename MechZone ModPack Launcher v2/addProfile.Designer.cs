@@ -108,6 +108,7 @@
             this.Resizable = false;
             this.ShadowType = MetroFramework.Forms.MetroForm.MetroFormShadowType.DropShadow;
             this.Text = "Add Profile";
+            this.Load += new System.EventHandler(this.addProfile_Load);
             this.Shown += new System.EventHandler(this.addProfile_Shown);
             ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).EndInit();
             this.ResumeLayout(false);
