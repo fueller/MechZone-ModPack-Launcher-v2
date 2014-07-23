@@ -261,7 +261,7 @@ namespace MechZone_ModPack_Launcher_v2
                 string text = @"[17:04:56] [Client thread/INFO]: [CHAT] fueller has just earned the achievement [Taking Inventory]";
                 Regex mypattern = new Regex(regex);
                 var test = mypattern.Match(text);
-                MessageBox.Show("");
+                //MessageBox.Show("");
             } catch (Exception ex)
             {
                 Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
@@ -422,6 +422,7 @@ namespace MechZone_ModPack_Launcher_v2
                     profiles.authenticationDatabase[response.selectedProfile.id].accessToken = response.accessToken;
                     File.WriteAllText(location + @"\mz_launcher_profiles.json", JsonConvert.SerializeObject(profiles, Formatting.Indented));
                 }
+                //MessageBox.Show("starting 01");
                 launchModPack(user, selectedModpack);
             } catch (Exception ex)
             {
@@ -434,7 +435,9 @@ namespace MechZone_ModPack_Launcher_v2
             try
             {
                 Console.WriteLine("Starte Modpack: \"" + selectedModpack.display_name + "\" mit Benutzer: \"" + user.displayName + "\"");
+                //MessageBox.Show("Starte Modpack: \"" + selectedModpack.display_name + "\" mit Benutzer: \"" + user.displayName + "\"");
                 JCmodpackVersion latestVersion = getLatestModPackVersion(selectedModPack);
+                userInfo profile = getSelectedProfile();
                 getMinecraft(selectedModpack, latestVersion.minecraft);
                 getAssetsForVersion(latestVersion.minecraft);
                 getLibrariesForVersion(latestVersion.minecraft, latestVersion.forgeVersion);
@@ -442,10 +445,14 @@ namespace MechZone_ModPack_Launcher_v2
                 getNatives(selectedModPack, latestVersion.forgeVersion, latestVersion.minecraft);
                 getMods(selectedModPack, latestVersion);
 
+                //MessageBox.Show("starting 02");
+
                 string fileLoc = location + "\\modpacks\\" + selectedModpack.name + "\\version.json";
 
                 if(!File.Exists(fileLoc))
                 {
+                    string directory = Path.GetDirectoryName(fileLoc);
+                    Directory.CreateDirectory(directory);
                     File.WriteAllText(fileLoc, JsonConvert.SerializeObject(new JCversion()));
                 }
 
@@ -464,6 +471,8 @@ namespace MechZone_ModPack_Launcher_v2
                 }
 
                 //Close();
+
+                //MessageBox.Show("starting 03");
 
                 ProcessStartInfo start = new ProcessStartInfo();
                 start.UseShellExecute = false;
@@ -491,13 +500,13 @@ namespace MechZone_ModPack_Launcher_v2
                     }
                 }
                 arguments += location + @"\modpacks\" + selectedModpack.name + "\\bin\\minecraft.jar net.minecraft.launchwrapper.Launch ";
-                arguments += "--username fueller ";
+                arguments += "--username " + profile.displayName + " "; 
                 arguments += "--version 1.7.10 ";
                 arguments += "--gameDir " + workingDirectory + " ";
                 arguments += "--assetsDir " + location + @"\assets ";
                 arguments += "--assetIndex 1.7.10 ";
-                arguments += "--uuid 7d5e5b10011e4403b53f931d523375f3 ";
-                arguments += "--accessToken 92d11ff5516e4a909d25a854a7884ed0 ";
+                arguments += "--uuid " + profile.uuid + " ";
+                arguments += "--accessToken " + profile.accessToken + " ";
                 arguments += "--userProperties {} ";
                 arguments += "--userType mojang ";
                 arguments += "--tweakClass cpw.mods.fml.common.launcher.FMLTweaker";
@@ -835,6 +844,7 @@ namespace MechZone_ModPack_Launcher_v2
         private string getJavaInstallationPath()
         {
             string environmentPath = Environment.GetEnvironmentVariable("JAVA_HOME");
+            //MessageBox.Show(environmentPath);
             if(!string.IsNullOrEmpty(environmentPath))
             {
                 return environmentPath;
