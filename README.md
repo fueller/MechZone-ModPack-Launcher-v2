@@ -3,8 +3,8 @@ MechZone-ModPack-Launcher-v2
 
 Todo:
 - [ ] send to pastebin button
-- [ ] change install path
-- [ ] change java path
-- [ ] ram settings
+- [x] change install path
+- [x] change java path
+- [x] ram settings
 - [ ] resolution settings
-- [ ] extra parameter settings
+- [x] extra parameter settings
