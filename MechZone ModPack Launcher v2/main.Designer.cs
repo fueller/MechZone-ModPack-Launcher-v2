@@ -33,11 +33,13 @@
             this.mainTabControl = new MetroFramework.Controls.MetroTabControl();
             this.infoTabPage = new MetroFramework.Controls.MetroTabPage();
             this.infoWebBrowser = new System.Windows.Forms.WebBrowser();
-            this.logTabPage = new MetroFramework.Controls.MetroTabPage();
-            this.logTextBox = new System.Windows.Forms.RichTextBox();
             this.modPacksTabPage = new MetroFramework.Controls.MetroTabPage();
             this.modPacksContainer = new MetroFramework.Controls.MetroPanel();
+            this.logTabPage = new MetroFramework.Controls.MetroTabPage();
+            this.logTextBox = new System.Windows.Forms.RichTextBox();
             this.optionsTabPage = new MetroFramework.Controls.MetroTabPage();
+            this.selectedRam = new MetroFramework.Controls.MetroLabel();
+            this.ramSelector = new MetroFramework.Controls.MetroTrackBar();
             this.themeSelector = new MetroFramework.Controls.MetroComboBox();
             this.themeLabel = new MetroFramework.Controls.MetroLabel();
             this.styleLabel = new MetroFramework.Controls.MetroLabel();
@@ -46,23 +48,34 @@
             this.metroStyleManager = new MetroFramework.Components.MetroStyleManager(this.components);
             this.loginButton = new MetroFramework.Controls.MetroButton();
             this.profileBox = new MetroFramework.Controls.MetroComboBox();
-            this.addProfile = new MetroFramework.Controls.MetroButton();
             this.profileContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.addProfile = new MetroFramework.Controls.MetroButton();
+            this.gameSettings = new System.Windows.Forms.GroupBox();
+            this.ramDescription = new MetroFramework.Controls.MetroLabel();
+            this.extraJavaParameters = new MetroFramework.Controls.MetroTextBox();
+            this.extraDescription = new MetroFramework.Controls.MetroLabel();
+            this.javaPathDescription = new MetroFramework.Controls.MetroLabel();
+            this.javaPathTextBox = new MetroFramework.Controls.MetroTextBox();
+            this.changeJavaPath = new MetroFramework.Controls.MetroButton();
+            this.installPathDescripton = new MetroFramework.Controls.MetroLabel();
+            this.installPathTextBox = new MetroFramework.Controls.MetroTextBox();
+            this.changeInstallPath = new MetroFramework.Controls.MetroButton();
             this.mainTabControl.SuspendLayout();
             this.infoTabPage.SuspendLayout();
-            this.logTabPage.SuspendLayout();
             this.modPacksTabPage.SuspendLayout();
+            this.logTabPage.SuspendLayout();
             this.optionsTabPage.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).BeginInit();
             this.profileContextMenu.SuspendLayout();
+            this.gameSettings.SuspendLayout();
             this.SuspendLayout();
             // 
             // mainTabControl
             // 
             this.mainTabControl.Controls.Add(this.infoTabPage);
-            this.mainTabControl.Controls.Add(this.modPacksTabPage);
             this.mainTabControl.Controls.Add(this.optionsTabPage);
+            this.mainTabControl.Controls.Add(this.modPacksTabPage);
             this.mainTabControl.Controls.Add(this.logTabPage);
             this.mainTabControl.Location = new System.Drawing.Point(23, 63);
             this.mainTabControl.Name = "mainTabControl";
@@ -95,31 +108,6 @@
             this.infoWebBrowser.WebBrowserShortcutsEnabled = false;
             this.infoWebBrowser.Navigating += new System.Windows.Forms.WebBrowserNavigatingEventHandler(this.infoWebBrowser_Navigating);
             // 
-            // logTabPage
-            // 
-            this.logTabPage.Controls.Add(this.logTextBox);
-            this.logTabPage.HorizontalScrollbarBarColor = true;
-            this.logTabPage.HorizontalScrollbarSize = 0;
-            this.logTabPage.Location = new System.Drawing.Point(4, 35);
-            this.logTabPage.Name = "logTabPage";
-            this.logTabPage.Size = new System.Drawing.Size(1084, 428);
-            this.logTabPage.TabIndex = 3;
-            this.logTabPage.Text = "Log";
-            this.logTabPage.VerticalScrollbarBarColor = true;
-            this.logTabPage.VerticalScrollbarSize = 0;
-            // 
-            // logTextBox
-            // 
-            this.logTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.logTextBox.Location = new System.Drawing.Point(0, 0);
-            this.logTextBox.Name = "logTextBox";
-            this.logTextBox.ReadOnly = true;
-            this.logTextBox.Size = new System.Drawing.Size(1084, 428);
-            this.logTextBox.TabIndex = 2;
-            this.logTextBox.Text = "";
-            this.logTextBox.WordWrap = false;
-            this.logTextBox.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.logTextBox_LinkClicked);
-            // 
             // modPacksTabPage
             // 
             this.modPacksTabPage.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
@@ -148,8 +136,34 @@
             this.modPacksContainer.VerticalScrollbarHighlightOnWheel = false;
             this.modPacksContainer.VerticalScrollbarSize = 10;
             // 
+            // logTabPage
+            // 
+            this.logTabPage.Controls.Add(this.logTextBox);
+            this.logTabPage.HorizontalScrollbarBarColor = true;
+            this.logTabPage.HorizontalScrollbarSize = 0;
+            this.logTabPage.Location = new System.Drawing.Point(4, 35);
+            this.logTabPage.Name = "logTabPage";
+            this.logTabPage.Size = new System.Drawing.Size(1084, 428);
+            this.logTabPage.TabIndex = 3;
+            this.logTabPage.Text = "Log";
+            this.logTabPage.VerticalScrollbarBarColor = true;
+            this.logTabPage.VerticalScrollbarSize = 0;
+            // 
+            // logTextBox
+            // 
+            this.logTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.logTextBox.Location = new System.Drawing.Point(0, 0);
+            this.logTextBox.Name = "logTextBox";
+            this.logTextBox.ReadOnly = true;
+            this.logTextBox.Size = new System.Drawing.Size(1084, 428);
+            this.logTextBox.TabIndex = 2;
+            this.logTextBox.Text = "";
+            this.logTextBox.WordWrap = false;
+            this.logTextBox.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.logTextBox_LinkClicked);
+            // 
             // optionsTabPage
             // 
+            this.optionsTabPage.Controls.Add(this.gameSettings);
             this.optionsTabPage.Controls.Add(this.themeSelector);
             this.optionsTabPage.Controls.Add(this.themeLabel);
             this.optionsTabPage.Controls.Add(this.styleLabel);
@@ -161,6 +175,31 @@
             this.optionsTabPage.TabIndex = 2;
             this.optionsTabPage.Text = "Options";
             this.optionsTabPage.VerticalScrollbarBarColor = true;
+            // 
+            // selectedRam
+            // 
+            this.selectedRam.AutoSize = true;
+            this.selectedRam.Location = new System.Drawing.Point(6, 70);
+            this.selectedRam.Name = "selectedRam";
+            this.selectedRam.Size = new System.Drawing.Size(61, 19);
+            this.selectedRam.TabIndex = 7;
+            this.selectedRam.Text = "2048 MB";
+            // 
+            // ramSelector
+            // 
+            this.ramSelector.BackColor = System.Drawing.Color.Transparent;
+            this.ramSelector.LargeChange = 1024;
+            this.ramSelector.Location = new System.Drawing.Point(6, 44);
+            this.ramSelector.Maximum = 8192;
+            this.ramSelector.Minimum = 1024;
+            this.ramSelector.Name = "ramSelector";
+            this.ramSelector.Size = new System.Drawing.Size(360, 23);
+            this.ramSelector.SmallChange = 512;
+            this.ramSelector.TabIndex = 6;
+            this.ramSelector.Text = "metroTrackBar1";
+            this.ramSelector.Value = 2048;
+            this.ramSelector.Scroll += new System.Windows.Forms.ScrollEventHandler(this.ramSelector_Scroll);
+            this.ramSelector.MouseUp += new System.Windows.Forms.MouseEventHandler(this.ramSelector_MouseUp);
             // 
             // themeSelector
             // 
@@ -233,6 +272,20 @@
             this.profileBox.TabIndex = 3;
             this.profileBox.SelectedIndexChanged += new System.EventHandler(this.profileBox_SelectedIndexChanged);
             // 
+            // profileContextMenu
+            // 
+            this.profileContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripMenuItem1});
+            this.profileContextMenu.Name = "profileContextMenu";
+            this.profileContextMenu.Size = new System.Drawing.Size(141, 26);
+            // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(140, 22);
+            this.toolStripMenuItem1.Text = "deleteProfile";
+            this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
+            // 
             // addProfile
             // 
             this.addProfile.Location = new System.Drawing.Point(776, 536);
@@ -242,19 +295,104 @@
             this.addProfile.Text = "Add Profile";
             this.addProfile.Click += new System.EventHandler(this.addProfile_Click);
             // 
-            // profileContextMenu
+            // gameSettings
             // 
-            this.profileContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripMenuItem1});
-            this.profileContextMenu.Name = "profileContextMenu";
-            this.profileContextMenu.Size = new System.Drawing.Size(153, 48);
+            this.gameSettings.BackColor = System.Drawing.Color.Transparent;
+            this.gameSettings.Controls.Add(this.changeInstallPath);
+            this.gameSettings.Controls.Add(this.installPathTextBox);
+            this.gameSettings.Controls.Add(this.installPathDescripton);
+            this.gameSettings.Controls.Add(this.changeJavaPath);
+            this.gameSettings.Controls.Add(this.javaPathTextBox);
+            this.gameSettings.Controls.Add(this.javaPathDescription);
+            this.gameSettings.Controls.Add(this.extraDescription);
+            this.gameSettings.Controls.Add(this.extraJavaParameters);
+            this.gameSettings.Controls.Add(this.ramDescription);
+            this.gameSettings.Controls.Add(this.ramSelector);
+            this.gameSettings.Controls.Add(this.selectedRam);
+            this.gameSettings.Location = new System.Drawing.Point(249, 3);
+            this.gameSettings.Name = "gameSettings";
+            this.gameSettings.Size = new System.Drawing.Size(372, 422);
+            this.gameSettings.TabIndex = 9;
+            this.gameSettings.TabStop = false;
+            this.gameSettings.Text = "Game Settings";
             // 
-            // toolStripMenuItem1
+            // ramDescription
             // 
-            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
-            this.toolStripMenuItem1.Text = "deleteProfile";
-            this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
+            this.ramDescription.AutoSize = true;
+            this.ramDescription.Location = new System.Drawing.Point(7, 20);
+            this.ramDescription.Name = "ramDescription";
+            this.ramDescription.Size = new System.Drawing.Size(36, 19);
+            this.ramDescription.TabIndex = 8;
+            this.ramDescription.Text = "Ram";
+            // 
+            // extraJavaParameters
+            // 
+            this.extraJavaParameters.Location = new System.Drawing.Point(7, 137);
+            this.extraJavaParameters.Name = "extraJavaParameters";
+            this.extraJavaParameters.Size = new System.Drawing.Size(359, 23);
+            this.extraJavaParameters.TabIndex = 9;
+            this.extraJavaParameters.TextChanged += new System.EventHandler(this.extraJavaParameters_TextChanged);
+            // 
+            // extraDescription
+            // 
+            this.extraDescription.AutoSize = true;
+            this.extraDescription.Location = new System.Drawing.Point(7, 112);
+            this.extraDescription.Name = "extraDescription";
+            this.extraDescription.Size = new System.Drawing.Size(137, 19);
+            this.extraDescription.TabIndex = 10;
+            this.extraDescription.Text = "Extra Java Parameters";
+            // 
+            // javaPathDescription
+            // 
+            this.javaPathDescription.AutoSize = true;
+            this.javaPathDescription.Location = new System.Drawing.Point(7, 183);
+            this.javaPathDescription.Name = "javaPathDescription";
+            this.javaPathDescription.Size = new System.Drawing.Size(63, 19);
+            this.javaPathDescription.TabIndex = 11;
+            this.javaPathDescription.Text = "Java Path";
+            // 
+            // javaPathTextBox
+            // 
+            this.javaPathTextBox.Location = new System.Drawing.Point(7, 206);
+            this.javaPathTextBox.Name = "javaPathTextBox";
+            this.javaPathTextBox.ReadOnly = true;
+            this.javaPathTextBox.Size = new System.Drawing.Size(300, 23);
+            this.javaPathTextBox.TabIndex = 12;
+            // 
+            // changeJavaPath
+            // 
+            this.changeJavaPath.Location = new System.Drawing.Point(313, 206);
+            this.changeJavaPath.Name = "changeJavaPath";
+            this.changeJavaPath.Size = new System.Drawing.Size(53, 23);
+            this.changeJavaPath.TabIndex = 13;
+            this.changeJavaPath.Text = "Change";
+            this.changeJavaPath.Click += new System.EventHandler(this.changeJavaPath_Click);
+            // 
+            // installPathDescripton
+            // 
+            this.installPathDescripton.AutoSize = true;
+            this.installPathDescripton.Location = new System.Drawing.Point(7, 250);
+            this.installPathDescripton.Name = "installPathDescripton";
+            this.installPathDescripton.Size = new System.Drawing.Size(70, 19);
+            this.installPathDescripton.TabIndex = 14;
+            this.installPathDescripton.Text = "Install Path";
+            // 
+            // installPathTextBox
+            // 
+            this.installPathTextBox.Location = new System.Drawing.Point(7, 273);
+            this.installPathTextBox.Name = "installPathTextBox";
+            this.installPathTextBox.ReadOnly = true;
+            this.installPathTextBox.Size = new System.Drawing.Size(300, 23);
+            this.installPathTextBox.TabIndex = 15;
+            // 
+            // changeInstallPath
+            // 
+            this.changeInstallPath.Location = new System.Drawing.Point(313, 273);
+            this.changeInstallPath.Name = "changeInstallPath";
+            this.changeInstallPath.Size = new System.Drawing.Size(53, 23);
+            this.changeInstallPath.TabIndex = 16;
+            this.changeInstallPath.Text = "Change";
+            this.changeInstallPath.Click += new System.EventHandler(this.changeInstallPath_Click);
             // 
             // mainWindow
             // 
@@ -278,12 +416,14 @@
             this.Shown += new System.EventHandler(this.mainWindow_Shown);
             this.mainTabControl.ResumeLayout(false);
             this.infoTabPage.ResumeLayout(false);
-            this.logTabPage.ResumeLayout(false);
             this.modPacksTabPage.ResumeLayout(false);
+            this.logTabPage.ResumeLayout(false);
             this.optionsTabPage.ResumeLayout(false);
             this.optionsTabPage.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.metroStyleManager)).EndInit();
             this.profileContextMenu.ResumeLayout(false);
+            this.gameSettings.ResumeLayout(false);
+            this.gameSettings.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -309,6 +449,18 @@
         private System.Windows.Forms.RichTextBox logTextBox;
         private System.Windows.Forms.ContextMenuStrip profileContextMenu;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private MetroFramework.Controls.MetroTrackBar ramSelector;
+        private MetroFramework.Controls.MetroLabel selectedRam;
+        private System.Windows.Forms.GroupBox gameSettings;
+        private MetroFramework.Controls.MetroLabel ramDescription;
+        private MetroFramework.Controls.MetroLabel extraDescription;
+        private MetroFramework.Controls.MetroTextBox extraJavaParameters;
+        private MetroFramework.Controls.MetroButton changeJavaPath;
+        private MetroFramework.Controls.MetroTextBox javaPathTextBox;
+        private MetroFramework.Controls.MetroLabel javaPathDescription;
+        private MetroFramework.Controls.MetroButton changeInstallPath;
+        private MetroFramework.Controls.MetroTextBox installPathTextBox;
+        private MetroFramework.Controls.MetroLabel installPathDescripton;
     }
 }
 

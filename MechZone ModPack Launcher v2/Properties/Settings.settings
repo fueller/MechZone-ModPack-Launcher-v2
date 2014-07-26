@@ -14,5 +14,17 @@
     <Setting Name="selectedModPack" Type="System.String" Scope="User">
       <Value Profile="(Default)">mechzone-modpack</Value>
     </Setting>
+    <Setting Name="ram" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">2048</Value>
+    </Setting>
+    <Setting Name="javaParameters" Type="System.String" Scope="User">
+      <Value Profile="(Default)">-XX:MaxPermSize=256m</Value>
+    </Setting>
+    <Setting Name="javaPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="installPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

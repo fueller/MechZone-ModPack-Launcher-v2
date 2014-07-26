@@ -111,6 +111,31 @@ namespace MechZone_ModPack_Launcher_v2
                 themeSelector.SelectedIndex = Properties.Settings.Default.selectedTheme;
                 styleSelector.SelectedIndex = Properties.Settings.Default.selectedStyle;
 
+                ramSelector.Value = Properties.Settings.Default.ram;
+                selectedRam.Text = ramSelector.Value / 1024 + " GB (" + ramSelector.Value + " MB)";
+
+                extraJavaParameters.Text = Properties.Settings.Default.javaParameters;
+
+                if(String.IsNullOrEmpty(Properties.Settings.Default.javaPath))
+                {
+                    Properties.Settings.Default.javaPath = getJavaInstallationPath();
+                    Properties.Settings.Default.Save();
+                    javaPathTextBox.Text = Properties.Settings.Default.javaPath;
+                } else
+                {
+                    javaPathTextBox.Text = Properties.Settings.Default.javaPath;
+                }
+
+                if(String.IsNullOrEmpty(Properties.Settings.Default.installPath))
+                {
+                    Properties.Settings.Default.installPath = location;
+                    Properties.Settings.Default.Save();
+                    installPathTextBox.Text = Properties.Settings.Default.installPath;
+                } else
+                {
+                    installPathTextBox.Text = Properties.Settings.Default.installPath;
+                }
+
             } catch (Exception ex)
             {
                 Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
@@ -364,7 +389,15 @@ namespace MechZone_ModPack_Launcher_v2
 
         private void themeSelector_SelectedIndexChanged(object sender, EventArgs e)
         {
-            StyleManager.Theme = (MetroThemeStyle)themeSelector.SelectedItem;
+            MetroThemeStyle selected = (MetroThemeStyle)themeSelector.SelectedItem;
+            StyleManager.Theme = selected;
+            if(selected == MetroThemeStyle.Dark)
+            {
+                gameSettings.ForeColor = Color.White;
+            } else
+            {
+                gameSettings.ForeColor = Color.Black;
+            }
             Properties.Settings.Default.selectedTheme = themeSelector.SelectedIndex;
             Properties.Settings.Default.Save();
         }
@@ -435,17 +468,13 @@ namespace MechZone_ModPack_Launcher_v2
             try
             {
                 Console.WriteLine("Starte Modpack: \"" + selectedModpack.display_name + "\" mit Benutzer: \"" + user.displayName + "\"");
-                //MessageBox.Show("Starte Modpack: \"" + selectedModpack.display_name + "\" mit Benutzer: \"" + user.displayName + "\"");
                 JCmodpackVersion latestVersion = getLatestModPackVersion(selectedModPack);
                 userInfo profile = getSelectedProfile();
                 getMinecraft(selectedModpack, latestVersion.minecraft);
                 getAssetsForVersion(latestVersion.minecraft);
                 getLibrariesForVersion(latestVersion.minecraft, latestVersion.forgeVersion);
-                ////getForge(selectedModpack, latestVersion.forgeVersion, latestVersion.minecraft);
                 getNatives(selectedModPack, latestVersion.forgeVersion, latestVersion.minecraft);
                 getMods(selectedModPack, latestVersion);
-
-                //MessageBox.Show("starting 02");
 
                 string fileLoc = location + "\\modpacks\\" + selectedModpack.name + "\\version.json";
 
@@ -470,16 +499,12 @@ namespace MechZone_ModPack_Launcher_v2
                     dlf.ShowDialog(); 
                 }
 
-                //Close();
-
-                //MessageBox.Show("starting 03");
-
                 ProcessStartInfo start = new ProcessStartInfo();
                 start.UseShellExecute = false;
                 start.RedirectStandardError = true;
                 start.RedirectStandardOutput = true;
 
-                start.FileName = getJavaInstallationPath() + "\\bin\\javaw.exe";
+                start.FileName = getJavaInstallationPath();
                 
                 string workingDirectory = location + "\\modpacks\\" + selectedModpack.name;
 
@@ -487,8 +512,10 @@ namespace MechZone_ModPack_Launcher_v2
 
                 string arguments = "";
                 arguments += "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump ";
-                arguments += "-Xmx4096m ";
-                arguments += "-XX:MaxPermSize=256m ";
+                //arguments += "-Xmx4096m ";
+                arguments += "-Xmx" + Properties.Settings.Default.ram + "m ";
+                //arguments += "-XX:MaxPermSize=256m ";
+                arguments += Properties.Settings.Default.javaParameters + " ";
                 arguments += @"-Djava.library.path=" + location + @"\modpacks\" + selectedModpack.name + @"\bin\" + latestVersion.minecraft + "-" + latestVersion.forgeVersion + "-natives ";
                 //arguments += "-Dminecraft.applet.TargetDirectory=" + workingDirectory + " ";
                 arguments += "-cp ";
@@ -513,7 +540,7 @@ namespace MechZone_ModPack_Launcher_v2
 
 
 
-                //Console.WriteLine(arguments);
+                Console.WriteLine(arguments);
                 start.Arguments = arguments;
 
                 using (Process process = Process.Start(start))
@@ -566,13 +593,16 @@ namespace MechZone_ModPack_Launcher_v2
                 return;
             }
 
-            if(type.Equals("error") || text.Contains("Warning") || text.Contains("WARN"))
+            if(type.Equals("error") || text.Contains("Warning") || text.Contains("WARN") || text.Contains("ERROR") || text.Contains("Exception"))
             {
                 logTextBox.AppendText(text + "\n", Color.Red);
+            } else if(text.Contains("CHAT"))
+            {
+                logTextBox.AppendText(text + "\n", Color.Green);
             } else if(text.Contains("INFO"))
             {
                 logTextBox.AppendText(text + "\n", Color.Blue);
-            }else
+            } else
             {
                 logTextBox.AppendText(text + "\n");
             }
@@ -709,7 +739,6 @@ namespace MechZone_ModPack_Launcher_v2
         {
             try
             {
-                //string dlUrl = "http://s3.amazonaws.com/Minecraft.Download/versions/" + version + "/" + version + ".json";
                 string dlUrl = "http://solder.mechzone.net/install_profile/" + version + "-" + forgeVersion + ".json";
                 Console.WriteLine(dlUrl);
                 string json = getStringFromUrl(dlUrl);
@@ -847,7 +876,7 @@ namespace MechZone_ModPack_Launcher_v2
             //MessageBox.Show(environmentPath);
             if(!string.IsNullOrEmpty(environmentPath))
             {
-                return environmentPath;
+                return environmentPath + "\\bin\\javaw.exe";
             }
 
             string javaKey = "SOFTWARE\\JavaSoft\\Java Runtime Environment\\";
@@ -856,7 +885,7 @@ namespace MechZone_ModPack_Launcher_v2
                 string currentVersion = rk.GetValue("CurrentVersion").ToString();
                 using (Microsoft.Win32.RegistryKey key = rk.OpenSubKey(currentVersion))
                 {
-                    return key.GetValue("JavaHome").ToString();
+                    return key.GetValue("JavaHome").ToString() + "\\bin\\javaw.exe"; ;
                 }
             }
         }
@@ -903,6 +932,79 @@ namespace MechZone_ModPack_Launcher_v2
                 Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
             }
 
+        }
+        
+        private void ramSelector_Scroll(object sender, ScrollEventArgs e)
+        {
+            selectedRam.Text = ramSelector.Value/1024 + " GB (" + ramSelector.Value + " MB)";
+            
+        }
+        
+        private void ramSelector_MouseUp(object sender, MouseEventArgs e)
+        {
+            Console.WriteLine("ram save");
+            Properties.Settings.Default.ram = ramSelector.Value;
+            Properties.Settings.Default.Save();
+        }
+
+        private void extraJavaParameters_TextChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.javaParameters = extraJavaParameters.Text;
+            Properties.Settings.Default.Save();
+        }
+
+        private void changeJavaPath_Click(object sender, EventArgs e)
+        {
+
+            OpenFileDialog fd = new OpenFileDialog();
+            fd.Filter = "javaw File |javaw.exe";
+            fd.InitialDirectory = Path.GetDirectoryName(getJavaInstallationPath());
+            fd.FilterIndex = 1;
+            if(fd.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    Properties.Settings.Default.javaPath = fd.FileName;
+                    Properties.Settings.Default.Save();
+                    
+                } catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                }
+            }
+
+
+        }
+
+        private void changeInstallPath_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog bd = new FolderBrowserDialog();
+            bd.SelectedPath = location;
+            bd.ShowNewFolderButton = true;
+            if(bd.ShowDialog() == DialogResult.OK)
+            {
+                if(!IsDirectoryEmpty(bd.SelectedPath))
+                {
+                    MessageBox.Show("Directory is not empty.\nPlease select a different directory!","Error",MessageBoxButtons.OK,MessageBoxIcon.Error);
+                } else
+                {
+                    Properties.Settings.Default.installPath = bd.SelectedPath;
+                    Properties.Settings.Default.Save();
+                    installPathTextBox.Text = bd.SelectedPath;
+                    string oldlocation = location;
+                    location = bd.SelectedPath;
+                    if(!File.Exists(location + @"\mz_launcher_profiles.json"))
+                    {
+                        File.Copy(oldlocation + @"\mz_launcher_profiles.json", location + @"\mz_launcher_profiles.json");
+
+                    }
+                }
+            }
+        }
+
+        public bool IsDirectoryEmpty(string path)
+        {
+            return !Directory.EnumerateFileSystemEntries(path).Any();
         }
     }
 
