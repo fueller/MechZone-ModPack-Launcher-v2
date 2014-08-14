@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MechZone_ModPack_Launcher_v2
@@ -16,7 +13,7 @@ namespace MechZone_ModPack_Launcher_v2
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new mainWindow());
+            Application.Run(new MainWindow());
         }
     }
 }

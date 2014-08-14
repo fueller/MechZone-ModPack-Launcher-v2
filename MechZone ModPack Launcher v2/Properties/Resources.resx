@@ -124,4 +124,34 @@
   <data name="space" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\space.jpg;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="DownloadForm_UnzipMods_Do_you_want_to_Backup_your_Config_Files_" xml:space="preserve">
+    <value>Do you want to Backup your Config Files?</value>
+  </data>
+  <data name="DownloadForm_UnzipMods_Backup_Config_Files" xml:space="preserve">
+    <value>Backup Config Files</value>
+  </data>
+  <data name="MainWindow_Authenticate_" xml:space="preserve">
+    <value>Entweder ist der Server nicht erreichbar oder
+dein Passwort oder Benutzername stimmt nicht!</value>
+  </data>
+  <data name="MainWindow_Authenticate_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="MainWindow_addProfile_Click_Es_ist_ein_Fehler_aufgetreten__bitte_versuche_es_noch_einmal_" xml:space="preserve">
+    <value>Es ist ein Fehler aufgetreten, bitte versuche es noch einmal.</value>
+  </data>
+  <data name="MainWindow_LaunchModPack_" xml:space="preserve">
+    <value>New Modpack update available!
+Do you want to update?</value>
+  </data>
+  <data name="MainWindow_LaunchModPack_New_Update_Available" xml:space="preserve">
+    <value>New Update Available</value>
+  </data>
+  <data name="Exception_Output" xml:space="preserve">
+    <value>{0}
+{1}</value>
+  </data>
 </root>

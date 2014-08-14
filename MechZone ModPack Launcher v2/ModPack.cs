@@ -1,54 +1,45 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using MetroFramework.Forms;
 using MetroFramework.Controls;
 
 namespace MechZone_ModPack_Launcher_v2
 {
     public partial class ModPack : MetroUserControl
     {
-        jsonClasses.JCmodpackInfo packInfo;
+        jsonClasses.JCmodpackInfo _packInfo;
         public ModPack()
         {
             InitializeComponent();
         }
 
-        public string modPackImage
+        public string ModPackImage
         {
-            get { return modInfoImage.ImageLocation; }
+            private get { return modInfoImage.ImageLocation; }
             set { modInfoImage.ImageLocation = value; Invalidate(); }
         }
 
-        public string modPackDescription
+        public string ModPackDescription
         {
-            get { return modInfoDescription.Text; }
+            private get { return modInfoDescription.Text; }
             set { modInfoDescription.Text = value; Invalidate(); }
         }
 
-        public string modPackName
+        public string ModPackName
         {
-            get { return modInfoName.Text; }
+            private get { return modInfoName.Text; }
             set { modInfoName.Text = value; Invalidate(); }
         }
 
-        public jsonClasses.JCmodpackInfo modPackInfo
+        public jsonClasses.JCmodpackInfo ModPackInfo
         {
-            get { return packInfo; }
-            set { packInfo = value; Invalidate(); }
+            get { return _packInfo; }
+            set { _packInfo = value; Invalidate(); }
         }
 
         private void ModPack_Load(object sender, EventArgs e)
         {
-            modInfoName.Text = modPackName;
-            modInfoDescription.Text = modPackDescription;
-            modInfoImage.ImageLocation = modPackImage;
+            modInfoName.Text = ModPackName;
+            modInfoDescription.Text = ModPackDescription;
+            modInfoImage.ImageLocation = ModPackImage;
         }
     }
 }

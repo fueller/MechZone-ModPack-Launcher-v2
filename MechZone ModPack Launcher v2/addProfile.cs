@@ -1,43 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
-using MetroFramework;
-using MetroFramework.Components;
-using MetroFramework.Controls;
 using MetroFramework.Forms;
-using System.Net;
 using System.IO;
 using Newtonsoft.Json;
-using MechZone_ModPack_Launcher_v2;
 
 namespace MechZone_ModPack_Launcher_v2
 {
-    public partial class addProfile : MetroForm
+    public partial class AddProfile : MetroForm
     {
-        Guid uuid;
-        string location;
+        Guid _uuid;
+        string _location;
 
-        public Guid setUuid
+        public Guid SetUuid
         {
-            set { uuid = value; Invalidate(); }
+            set { _uuid = value; Invalidate(); }
         }
 
-        public string path
+        public string Path
         {
-            set { location = value; Invalidate(); }
+            set { _location = value; Invalidate(); }
         }
 
-        public addProfile()
+        public AddProfile()
         {
             InitializeComponent();
-            username.Text = " ";
-            password.Text = " ";
-            profileNameBox.Text = " ";
+            username.Text = @" ";
+            password.Text = @" ";
+            profileNameBox.Text = @" ";
         }
 
         private void addProfile_Shown(object sender, EventArgs e)
@@ -58,39 +47,43 @@ namespace MechZone_ModPack_Launcher_v2
             {
                 if(!String.IsNullOrEmpty(username.Text) && !String.IsNullOrEmpty(password.Text) && !String.IsNullOrEmpty(profileNameBox.Text))
                 {
-                    jsonClasses.JCauthenticateResponse res = mainWindow.authenticate(username.Text, password.Text, uuid);
+                    jsonClasses.JCauthenticateResponse res = MainWindow.Authenticate(username.Text, password.Text, _uuid);
                     if(res != null)
                     {
-                        jsonClasses.JCprofileSave file = JsonConvert.DeserializeObject<jsonClasses.JCprofileSave>(File.ReadAllText(location + @"\mz_launcher_profiles.json"));
+                        jsonClasses.JCprofileSave file = JsonConvert.DeserializeObject<jsonClasses.JCprofileSave>(File.ReadAllText(_location + @"\mz_launcher_profiles.json"));
 
                         //profile
-                        jsonClasses.profileInfo profile = new jsonClasses.profileInfo();
-                        profile.name = profileNameBox.Text;
-                        profile.playerUUID = res.selectedProfile.id;
+                        jsonClasses.profileInfo profile = new jsonClasses.profileInfo
+                        {
+                            name = profileNameBox.Text,
+                            playerUUID = res.selectedProfile.id
+                        };
                         file.profiles.Add(profileNameBox.Text, profile);
 
                         //authentication database
-                        jsonClasses.userInfo user = new jsonClasses.userInfo();
-                        user.uuid = res.selectedProfile.id;
-                        user.displayName = res.selectedProfile.name;
-                        user.accessToken = res.accessToken;
-                        user.username = username.Text;
+                        jsonClasses.userInfo user = new jsonClasses.userInfo
+                        {
+                            uuid = res.selectedProfile.id,
+                            displayName = res.selectedProfile.name,
+                            accessToken = res.accessToken,
+                            username = username.Text
+                        };
                         file.authenticationDatabase.Add(res.selectedProfile.id, user);
 
                         file.selectedProfile = res.selectedProfile.name;
 
                         string text = JsonConvert.SerializeObject(file, Formatting.Indented);
-                        File.WriteAllText(location + @"\mz_launcher_profiles.json", text);
+                        File.WriteAllText(_location + @"\mz_launcher_profiles.json", text);
 
-                        this.DialogResult = DialogResult.OK;
-                        this.Close();
+                        DialogResult = DialogResult.OK;
+                        Close();
                     }
                 }
             } catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
-                this.DialogResult = DialogResult.Abort;
-                this.Close();
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
+                DialogResult = DialogResult.Abort;
+                Close();
             }
             
             //this.DialogResult = DialogResult.OK;
@@ -99,8 +92,8 @@ namespace MechZone_ModPack_Launcher_v2
 
         private void cancelButton_Click(object sender, EventArgs e)
         {
-            this.DialogResult = DialogResult.Cancel;
-            this.Close();
+            DialogResult = DialogResult.Cancel;
+            Close();
         }
 
         private void addProfile_Load(object sender, EventArgs e)

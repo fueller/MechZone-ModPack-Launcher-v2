@@ -1,15 +1,15 @@
 ﻿namespace MechZone_ModPack_Launcher_v2.Properties {
     
     
-    // This class allows you to handle specific events on the settings class:
-    //  The SettingChanging event is raised before a setting's value is changed.
-    //  The PropertyChanged event is raised after a setting's value is changed.
-    //  The SettingsLoaded event is raised after the setting values are loaded.
-    //  The SettingsSaving event is raised before the setting values are saved.
+    // Diese Klasse ermöglicht die Behandlung bestimmter Ereignisse der Einstellungsklasse:
+    //  Das SettingChanging-Ereignis wird ausgelöst, bevor der Wert einer Einstellung geändert wird.
+    //  Das PropertyChanged-Ereignis wird ausgelöst, nachdem der Wert einer Einstellung geändert wurde.
+    //  Das SettingsLoaded-Ereignis wird ausgelöst, nachdem die Einstellungswerte geladen wurden.
+    //  Das SettingsSaving-Ereignis wird ausgelöst, bevor die Einstellungswerte gespeichert werden.
     internal sealed partial class Settings {
         
         public Settings() {
-            // // To add event handlers for saving and changing settings, uncomment the lines below:
+            // // Heben Sie die  Auskommentierung der unten angezeigten Zeilen auf, um Ereignishandler zum Speichern und Ändern von Einstellungen hinzuzufügen:
             //
             // this.SettingChanging += this.SettingChangingEventHandler;
             //
@@ -18,11 +18,11 @@
         }
         
         private void SettingChangingEventHandler(object sender, System.Configuration.SettingChangingEventArgs e) {
-            // Add code to handle the SettingChangingEvent event here.
+            // Fügen Sie hier Code zum Behandeln des SettingChangingEvent-Ereignisses hinzu.
         }
         
         private void SettingsSavingEventHandler(object sender, System.ComponentModel.CancelEventArgs e) {
-            // Add code to handle the SettingsSaving event here.
+            // Fügen Sie hier Code zum Behandeln des SettingsSaving-Ereignisses hinzu.
         }
     }
 }

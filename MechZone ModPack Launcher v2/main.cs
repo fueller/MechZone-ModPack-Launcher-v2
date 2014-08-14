@@ -1,20 +1,13 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows;
+using MechZone_ModPack_Launcher_v2.Properties;
 using MetroFramework;
-using MetroFramework.Components;
 using MetroFramework.Controls;
-using MetroFramework.Drawing;
-using MetroFramework.Fonts;
 using MetroFramework.Forms;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using System.Net;
 using System.IO;
@@ -22,79 +15,69 @@ using System.Deployment.Application;
 using System.Reflection;
 using System.Diagnostics;
 using MechZone_ModPack_Launcher_v2.jsonClasses;
-using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 
 namespace MechZone_ModPack_Launcher_v2
 {
-    public partial class mainWindow : MetroForm
+    public partial class MainWindow : MetroForm
     {
-        JCmodpacks aviableModpacks = new JCmodpacks();
-        Dictionary<string, JCmodpackInfo> modPackInfos = new Dictionary<string, JCmodpackInfo>();
-        string appdata;
-        string solderUrl = @"http://solder.mechzone.net/";
-        string solderApiUrl;
-        string modDownloadUrl;
-        string location = "%appdata%/.mechzoneV2";
-        Guid uuid;
+        JCmodpacks _aviableModpacks = new JCmodpacks();
+        readonly Dictionary<string, JCmodpackInfo> _modPackInfos = new Dictionary<string, JCmodpackInfo>();
+        private const string SolderUrl = @"http://solder.mechzone.net/";
+        readonly string _solderApiUrl;
+        string _location = "%appdata%/.mechzoneV2";
+        readonly Guid _uuid;
         //Dictionary<string, JCdownloadList> downloadList = new Dictionary<string, JCdownloadList>();
-        List<JCdownloadList> downloadList = new List<JCdownloadList>();
-        JCmodpackInfo selectedModpack = new JCmodpackInfo();
+        readonly List<JCdownloadList> _downloadList = new List<JCdownloadList>();
+        JCmodpackInfo _selectedModpack = new JCmodpackInfo();
+        private bool _changingUrl;
 
 
-        public mainWindow()
+        public MainWindow()
         {
             try
             {
-                
+
                 InitializeComponent();
 
                 mainTabControl.SelectedIndex = 0;
-                appdata = Environment.GetEnvironmentVariable("appdata");
-                location = appdata + "\\.mechzoneV2";
-                solderApiUrl = solderUrl + @"index.php/api/";
-                modDownloadUrl = solderUrl + @"mods/";
-                if(!Directory.Exists(location))
+                string appdata = Environment.GetEnvironmentVariable("appdata");
+                _location = appdata + "\\.mechzoneV2";
+                _solderApiUrl = SolderUrl + @"index.php/api/";
+                if (!Directory.Exists(_location))
                 {
-                    Directory.CreateDirectory(location);
+                    Directory.CreateDirectory(_location);
                 }
 
-                if(!File.Exists(location + @"\mz_launcher_profiles.json"))
+                if (!File.Exists(_location + @"\mz_launcher_profiles.json"))
                 {
                     JCprofileSave text = new JCprofileSave();
                     Guid g = Guid.NewGuid();
                     text.clientToken = g;
                     text.profiles = new Dictionary<string, profileInfo>();
                     text.authenticationDatabase = new Dictionary<string, userInfo>();
-                    File.WriteAllText(location + @"\mz_launcher_profiles.json", JsonConvert.SerializeObject(text, Formatting.Indented));
+                    File.WriteAllText(_location + @"\mz_launcher_profiles.json", JsonConvert.SerializeObject(text, Formatting.Indented));
                 }
 
-                JCprofileSave uuidRead = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\mz_launcher_profiles.json"));
-                uuid = uuidRead.clientToken;
-                Icon = Properties.Resources.taskbarIcon;
-                this.Text = this.Text + " " + (ApplicationDeployment.IsNetworkDeployed ? ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString() : Assembly.GetExecutingAssembly().GetName().Version.ToString());
+                JCprofileSave uuidRead = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(_location + @"\mz_launcher_profiles.json"));
+                _uuid = uuidRead.clientToken;
+                Icon = Resources.taskbarIcon;
+                Text = string.Format("{0} {1}", Text, (ApplicationDeployment.IsNetworkDeployed ? ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString() : Assembly.GetExecutingAssembly().GetName().Version.ToString()));
 
-                if(System.Diagnostics.Debugger.IsAttached)
-                {
-                    metroButton1.Visible = true;
-                } else
-                {
-                    metroButton1.Visible = false;
-                }
+                metroButton1.Visible = Debugger.IsAttached;
 
-                foreach(MetroColorStyle color in (MetroColorStyle[])Enum.GetValues(typeof(MetroColorStyle)))
+                foreach (MetroColorStyle color in (MetroColorStyle[])Enum.GetValues(typeof(MetroColorStyle)))
                 {
                     styleSelector.Items.Add(color);
                 }
 
-                foreach(MetroThemeStyle color in (MetroThemeStyle[])Enum.GetValues(typeof(MetroThemeStyle)))
+                foreach (MetroThemeStyle color in (MetroThemeStyle[])Enum.GetValues(typeof(MetroThemeStyle)))
                 {
                     themeSelector.Items.Add(color);
                 }
 
-                JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\mz_launcher_profiles.json"));
+                JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(_location + @"\mz_launcher_profiles.json"));
                 profileBox.Items.Clear();
-                foreach(string profile in profiles.profiles.Keys)
+                foreach (string profile in profiles.profiles.Keys)
                 {
                     profileBox.Items.Add(profile);
 
@@ -102,199 +85,225 @@ namespace MechZone_ModPack_Launcher_v2
 
                 try
                 {
-                    profileBox.SelectedIndex = Properties.Settings.Default.selectedProfile;
-                } catch (Exception ex)
+                    profileBox.SelectedIndex = Settings.Default.selectedProfile;
+                }
+                catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                    Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
                 }
 
-                themeSelector.SelectedIndex = Properties.Settings.Default.selectedTheme;
-                styleSelector.SelectedIndex = Properties.Settings.Default.selectedStyle;
-
-                ramSelector.Value = Properties.Settings.Default.ram;
-                selectedRam.Text = ramSelector.Value / 1024 + " GB (" + ramSelector.Value + " MB)";
-
-                extraJavaParameters.Text = Properties.Settings.Default.javaParameters;
-
-                if(String.IsNullOrEmpty(Properties.Settings.Default.javaPath))
+                try
                 {
-                    Properties.Settings.Default.javaPath = getJavaInstallationPath();
-                    Properties.Settings.Default.Save();
-                    javaPathTextBox.Text = Properties.Settings.Default.javaPath;
-                } else
+                    themeSelector.SelectedIndex = Settings.Default.selectedTheme;
+                }
+                catch (Exception ex)
                 {
-                    javaPathTextBox.Text = Properties.Settings.Default.javaPath;
+                    Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
                 }
 
-                if(String.IsNullOrEmpty(Properties.Settings.Default.installPath))
+                try
                 {
-                    Properties.Settings.Default.installPath = location;
-                    Properties.Settings.Default.Save();
-                    installPathTextBox.Text = Properties.Settings.Default.installPath;
-                } else
+                    styleSelector.SelectedIndex = Settings.Default.selectedStyle;
+                }
+                catch (Exception ex)
                 {
-                    installPathTextBox.Text = Properties.Settings.Default.installPath;
+                    Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
                 }
 
-            } catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                ramSelector.Value = Settings.Default.ram;
+                selectedRam.Text = string.Format("{0} GB ({1} MB)", ramSelector.Value / 1024, ramSelector.Value);
+
+                extraJavaParameters.Text = Settings.Default.javaParameters;
+
+                if (String.IsNullOrEmpty(Settings.Default.javaPath))
+                {
+                    Settings.Default.javaPath = getJavaInstallationPath();
+                    Settings.Default.Save();
+                    javaPathTextBox.Text = Settings.Default.javaPath;
+                }
+                else
+                {
+                    javaPathTextBox.Text = Settings.Default.javaPath;
+                }
+
+                if (String.IsNullOrEmpty(Settings.Default.installPath))
+                {
+                    Settings.Default.installPath = _location;
+                    Settings.Default.Save();
+                    installPathTextBox.Text = Settings.Default.installPath;
+                }
+                else
+                {
+                    installPathTextBox.Text = Settings.Default.installPath;
+                    _location = Settings.Default.installPath;
+                }
+
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
+            }
+        }
 
+        public override sealed string Text
+        {
+            get { return base.Text; }
+            set { base.Text = value; }
         }
 
         private void mainWindow_Load(object sender, EventArgs e)
         {
-            getModPacks();
-            getModPackInfos();
-            listModPacks();
+            GetModPacks();
+            GetModPackInfos();
+            ListModPacks();
         }
 
-        void getModPacks()
+        void GetModPacks()
         {
             try
             {
-                String temp = getStringFromUrl(solderApiUrl + "modpack");
-                aviableModpacks = JsonConvert.DeserializeObject<JCmodpacks>(temp);
-            } catch (Exception ex)
+                String temp = getStringFromUrl(_solderApiUrl + "modpack");
+                _aviableModpacks = JsonConvert.DeserializeObject<JCmodpacks>(temp);
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
-        void getModPackInfos()
+        void GetModPackInfos()
         {
             try
             {
-                foreach(string modpack in aviableModpacks.modpacks.Keys)
+                foreach (string modpack in _aviableModpacks.modpacks.Keys)
                 {
-                    modPackInfos[modpack] = JsonConvert.DeserializeObject<JCmodpackInfo>(getStringFromUrl(solderApiUrl + "modpack/" + modpack));
+                    _modPackInfos[modpack] = JsonConvert.DeserializeObject<JCmodpackInfo>(getStringFromUrl(_solderApiUrl + "modpack/" + modpack));
                 }
 
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
-        void listModPacks()
+        void ListModPacks()
         {
             try
             {
                 int i = 0;
-                foreach(string modpack in aviableModpacks.modpacks.Keys)
+                foreach (string modpack in _aviableModpacks.modpacks.Keys)
                 {
-                    ModPack mp = new ModPack();
-                    mp.Location = new Point(5, 5 + (150 * i));
-                    mp.modPackDescription = modPackInfos[modpack].description;
-                    mp.modPackName = modPackInfos[modpack].display_name;
-                    mp.modPackImage = modPackInfos[modpack].icon;
-                    mp.Click += new EventHandler(modpackSelected);
-                    mp.modInfoImage.Click += new EventHandler(modpackSelected);
-                    mp.modInfoDescription.Click += new EventHandler(modpackSelected);
-                    mp.modInfoName.Click += new EventHandler(modpackSelected);
-                    mp.modPackInfo = modPackInfos[modpack];
+                    ModPack mp = new ModPack
+                    {
+                        Location = new Point(5, 5 + (150*i)),
+                        ModPackDescription = _modPackInfos[modpack].description,
+                        ModPackName = _modPackInfos[modpack].display_name,
+                        ModPackImage = _modPackInfos[modpack].icon
+                    };
+                    mp.Click += ModpackSelected;
+                    mp.modInfoImage.Click += ModpackSelected;
+                    mp.modInfoDescription.Click += ModpackSelected;
+                    mp.modInfoName.Click += ModpackSelected;
+                    mp.ModPackInfo = _modPackInfos[modpack];
                     modPacksContainer.Controls.Add(mp);
                     i++;
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
 
         }
 
-        private void modpackSelected(object sender, EventArgs e)
+        private void ModpackSelected(object sender, EventArgs e)
         {
             try
             {
                 ModPack mp = null;
-                if(sender.GetType().Equals(typeof(ModPack)))
+                if (sender.GetType() == typeof(ModPack))
                 {
                     mp = (ModPack)sender;
-                } else if(sender.GetType().Equals(typeof(MetroLabel)))
+                }
+                else if (sender.GetType() == typeof(MetroLabel))
                 {
                     MetroLabel label = (MetroLabel)sender;
-                    if(label.Parent.GetType().Equals(typeof(ModPack)))
+                    if (label.Parent.GetType() == typeof(ModPack))
                     {
                         mp = (ModPack)label.Parent;
-                    } else
+                    }
+                    else
                     {
                         throw new Exception("Selected ModPack Error");
                     }
-                } else if(sender.GetType().Equals(typeof(PictureBox)))
+                }
+                else if (sender.GetType() == typeof(PictureBox))
                 {
                     PictureBox pb = (PictureBox)sender;
-                    if(pb.Parent.GetType().Equals(typeof(ModPack)))
+                    if (pb.Parent.GetType() == typeof(ModPack))
                     {
                         mp = (ModPack)pb.Parent;
-                    } else
+                    }
+                    else
                     {
                         throw new Exception("Selected ModPack Error");
                     }
                 }
 
-                changeSelectedModPack(mp.modPackInfo.name);
-
-            } catch (Exception ex)
+                if (mp != null) ChangeSelectedModPack(mp.ModPackInfo.name);
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
-        private void changeSelectedModPack(string smp)
+        private void ChangeSelectedModPack(string smp)
         {
             try
             {
-
-                for(int i = 0; i < modPacksContainer.Controls.Count; i++)
+                for (int i = 0; i < modPacksContainer.Controls.Count; i++)
                 {
-                    if(modPacksContainer.Controls[i].GetType().Equals(typeof(ModPack)))
+                    if (modPacksContainer.Controls[i].GetType() == typeof(ModPack))
                     {
                         ModPack mp = (ModPack)modPacksContainer.Controls[i];
-                        if(mp.modPackInfo.name.Equals(smp))
+                        if (mp.ModPackInfo.name.Equals(smp))
                         {
                             mp.StyleManager.Theme = MetroThemeStyle.Dark;
-                            Properties.Settings.Default.selectedModPack = mp.modPackInfo.name;
-                            selectedModpack = mp.modPackInfo;
-                            Properties.Settings.Default.Save();
-                        } else
+                            Settings.Default.selectedModPack = mp.ModPackInfo.name;
+                            _selectedModpack = mp.ModPackInfo;
+                            Console.WriteLine("Now selected: {0}", _selectedModpack.name);
+                            Settings.Default.Save();
+                        }
+                        else
                         {
                             mp.StyleManager.Theme = MetroThemeStyle.Light;
                         }
                     }
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
         string getStringFromUrl(string url)
         {
-            WebClient client = new WebClient();
-            client.Proxy = null;
+            WebClient client = new WebClient {Proxy = null};
             String erg = client.DownloadString(url);
             return erg;
         }
 
         private void metroButton1_Click(object sender, EventArgs e)
         {
-            try
-            {
-                string regex = @"\[\d\d:\d\d:\d\d\]";
-                string text = @"[17:04:56] [Client thread/INFO]: [CHAT] fueller has just earned the achievement [Taking Inventory]";
-                Regex mypattern = new Regex(regex);
-                var test = mypattern.Match(text);
-                //MessageBox.Show("");
-            } catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
-            }
+            userInfo user = GetSelectedProfile();
+            Refresh(user.accessToken, _uuid);
         }
 
-        #region refresh authenticate
-        public static JCauthenticateResponse authenticate(string username, string password, Guid uuid)
+        #region Refresh authenticate
+        public static JCauthenticateResponse Authenticate(string username, string password, Guid uuid)
         {
             try
             {
@@ -305,13 +314,13 @@ namespace MechZone_ModPack_Launcher_v2
 
                 using (StreamWriter writer = new StreamWriter(httpWebRequest.GetRequestStream()))
                 {
-                    JCauthenticatePayload payload = new JCauthenticatePayload();
-                    payload.agent = new Agent();
-                    payload.agent.name = "Minecraft";
-                    payload.agent.version = 1;
-                    payload.username = username;
-                    payload.password = password;
-                    payload.clientToken = uuid.ToString();
+                    JCauthenticatePayload payload = new JCauthenticatePayload
+                    {
+                        agent = new Agent {name = "Minecraft", version = 1},
+                        username = username,
+                        password = password,
+                        clientToken = uuid.ToString()
+                    };
                     string json = JsonConvert.SerializeObject(payload);
                     writer.Write(json);
                     writer.Flush();
@@ -320,6 +329,7 @@ namespace MechZone_ModPack_Launcher_v2
 
                 HttpWebResponse httpWebResponse = (HttpWebResponse)httpWebRequest.GetResponse();
 
+// ReSharper disable once AssignNullToNotNullAttribute
                 using (StreamReader reader = new StreamReader(httpWebResponse.GetResponseStream()))
                 {
                     string response = reader.ReadToEnd();
@@ -327,18 +337,50 @@ namespace MechZone_ModPack_Launcher_v2
                     return j;
 
                 }
-            } catch (System.Net.WebException)
+            }
+            catch (WebException)
             {
-                MessageBox.Show("Entweder ist der Server nicht erreichbar oder\ndein Passwort oder Benutzername stimmt nicht!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(Resources.MainWindow_Authenticate_, Resources.MainWindow_Authenticate_Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return null;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
                 return null;
             }
         }
 
-        public static JCrefreshResponse refresh(string accessToken, Guid uuid)
+        private static void Invalidate(string accessToken, Guid uuid)
+        {
+            WebRequest.DefaultWebProxy = null;
+            HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create("https://authserver.mojang.com/invalidate");
+            httpWebRequest.ContentType = "application/json";
+            httpWebRequest.Method = "POST";
+
+            using (StreamWriter writer = new StreamWriter(httpWebRequest.GetRequestStream()))
+            {
+                JCrefreshPayload payload = new JCrefreshPayload
+                {
+                    accessToken = accessToken,
+                    clientToken = uuid.ToString()
+                };
+                string json = JsonConvert.SerializeObject(payload);
+                writer.Write(json);
+                writer.Flush();
+                writer.Close();
+            }
+
+            HttpWebResponse httpWebResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+// ReSharper disable once AssignNullToNotNullAttribute
+            using (StreamReader reader = new StreamReader(httpWebResponse.GetResponseStream()))
+            {
+                string response = reader.ReadToEnd();
+                Console.WriteLine(response);
+
+            }
+        }
+
+        private static JCrefreshResponse Refresh(string accessToken, Guid uuid)
         {
             try
             {
@@ -349,9 +391,11 @@ namespace MechZone_ModPack_Launcher_v2
 
                 using (StreamWriter writer = new StreamWriter(httpWebRequest.GetRequestStream()))
                 {
-                    JCrefreshPayload payload = new JCrefreshPayload();
-                    payload.accessToken = accessToken;
-                    payload.clientToken = uuid.ToString();
+                    JCrefreshPayload payload = new JCrefreshPayload
+                    {
+                        accessToken = accessToken,
+                        clientToken = uuid.ToString()
+                    };
                     string json = JsonConvert.SerializeObject(payload);
                     writer.Write(json);
                     writer.Flush();
@@ -360,6 +404,7 @@ namespace MechZone_ModPack_Launcher_v2
 
                 HttpWebResponse httpWebResponse = (HttpWebResponse)httpWebRequest.GetResponse();
 
+// ReSharper disable once AssignNullToNotNullAttribute
                 using (StreamReader reader = new StreamReader(httpWebResponse.GetResponseStream()))
                 {
                     string response = reader.ReadToEnd();
@@ -367,13 +412,15 @@ namespace MechZone_ModPack_Launcher_v2
                     return j;
 
                 }
-            } catch (WebException ex)
+            }
+            catch (WebException ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
                 return null;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
                 return null;
             }
         }
@@ -383,23 +430,33 @@ namespace MechZone_ModPack_Launcher_v2
         private void styleSelector_SelectedIndexChanged(object sender, EventArgs e)
         {
             StyleManager.Style = (MetroColorStyle)styleSelector.SelectedItem;
-            Properties.Settings.Default.selectedStyle = styleSelector.SelectedIndex;
-            Properties.Settings.Default.Save();
+            Settings.Default.selectedStyle = styleSelector.SelectedIndex;
+            Settings.Default.Save();
         }
 
         private void themeSelector_SelectedIndexChanged(object sender, EventArgs e)
         {
             MetroThemeStyle selected = (MetroThemeStyle)themeSelector.SelectedItem;
             StyleManager.Theme = selected;
-            if(selected == MetroThemeStyle.Dark)
+            gameSettings.ForeColor = selected == MetroThemeStyle.Dark ? Color.White : Color.Black;
+            _changingUrl = true;
+            Console.WriteLine(StyleManager.Theme.ToString());
+
+            switch (StyleManager.Theme.ToString())
             {
-                gameSettings.ForeColor = Color.White;
-            } else
-            {
-                gameSettings.ForeColor = Color.Black;
+                case "Dark":
+                    infoWebBrowser.Navigate(new Uri("http://mechzone.net/modpack/launcher/info/info.php?color1=111&color2=fff"));
+                    
+                    break;
+                case "Light":
+                case "Default":
+                    infoWebBrowser.Navigate(new Uri("http://mechzone.net/modpack/launcher/info/info.php?color1=fff&color2=000"));
+                    break;
             }
-            Properties.Settings.Default.selectedTheme = themeSelector.SelectedIndex;
-            Properties.Settings.Default.Save();
+            //Console.WriteLine("refresh");
+            //infoWebBrowser.Refresh();
+            Settings.Default.selectedTheme = themeSelector.SelectedIndex;
+            Settings.Default.Save();
         }
         #endregion
 
@@ -407,152 +464,223 @@ namespace MechZone_ModPack_Launcher_v2
         {
             try
             {
-                addProfile form = new MechZone_ModPack_Launcher_v2.addProfile();
-                form.metroStyleManager.Style = Style;
-                form.metroStyleManager.Theme = Theme;
-                form.setUuid = uuid;
-                form.path = location;
-                DialogResult res = form.ShowDialog();
-                if(res == DialogResult.OK)
+                AddProfile form = new AddProfile
                 {
-                    JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\mz_launcher_profiles.json"));
+                    metroStyleManager = {Style = Style, Theme = Theme},
+                    SetUuid = _uuid,
+                    Path = _location
+                };
+                DialogResult res = form.ShowDialog();
+                if (res == DialogResult.OK)
+                {
+                    JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(_location + @"\mz_launcher_profiles.json"));
                     profileBox.Items.Clear();
-                    foreach(string profile in profiles.profiles.Keys)
+                    foreach (string profile in profiles.profiles.Keys)
                     {
                         profileBox.Items.Add(profile);
-                        Properties.Settings.Default.selectedProfile = 0;
-                        Properties.Settings.Default.Save();
-                        profileBox.SelectedIndex = Properties.Settings.Default.selectedProfile;
+                        Settings.Default.selectedProfile = 0;
+                        Settings.Default.Save();
+                        profileBox.SelectedIndex = Settings.Default.selectedProfile;
                     }
-                } else if(res == DialogResult.Cancel)
-                {
-                    Console.WriteLine("Cancel");
-                } else if(res == DialogResult.Abort)
-                {
-                    MessageBox.Show("Es ist ein Fehler aufgetreten, bitte versuche es noch einmal.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-            } catch (Exception ex)
+                else if (res == DialogResult.Cancel)
+                {
+                    Console.WriteLine(Resources.Cancel);
+                }
+                else if (res == DialogResult.Abort)
+                {
+                    MessageBox.Show(Resources.MainWindow_addProfile_Click_Es_ist_ein_Fehler_aufgetreten__bitte_versuche_es_noch_einmal_, Resources.MainWindow_Authenticate_Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
         private void profileBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Properties.Settings.Default.selectedProfile = profileBox.SelectedIndex;
-            Properties.Settings.Default.Save();
+            Settings.Default.selectedProfile = profileBox.SelectedIndex;
+            Settings.Default.Save();
         }
 
         private void loginButton_Click(object sender, EventArgs e)
         {
             try
             {
-                userInfo user = getSelectedProfile();
-                JCrefreshResponse response = refresh(user.accessToken, uuid);
-                if(response != null)
+                userInfo user = GetSelectedProfile();
+                JCrefreshResponse response = Refresh(user.accessToken, _uuid);
+                if (response != null)
                 {
-                    JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\mz_launcher_profiles.json"));
+                    JCprofileSave profiles =
+                        JsonConvert.DeserializeObject<JCprofileSave>(
+                            File.ReadAllText(_location + @"\mz_launcher_profiles.json"));
                     profiles.authenticationDatabase[response.selectedProfile.id].accessToken = response.accessToken;
-                    File.WriteAllText(location + @"\mz_launcher_profiles.json", JsonConvert.SerializeObject(profiles, Formatting.Indented));
+                    File.WriteAllText(_location + @"\mz_launcher_profiles.json",
+                        JsonConvert.SerializeObject(profiles, Formatting.Indented));
+                    LaunchModPack(user, _selectedModpack);
                 }
-                //MessageBox.Show("starting 01");
-                launchModPack(user, selectedModpack);
-            } catch (Exception ex)
+                else
+                {
+                    MessageBox.Show("Error logging in, please recreate the Profile.","Error",MessageBoxButtons.OK,MessageBoxIcon.Error);
+                    toolStripMenuItem1_Click(null,null);
+                    addProfile_Click(null,null);
+                    MessageBox.Show("You can now try to log back in.", "Try Again", MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
-        private void launchModPack(userInfo user, JCmodpackInfo selectedModPack)
+        private string _usedVersion;
+        private void LaunchModPack(userInfo user, JCmodpackInfo selectedModPack)
         {
             try
             {
-                Console.WriteLine("Starte Modpack: \"" + selectedModpack.display_name + "\" mit Benutzer: \"" + user.displayName + "\"");
-                JCmodpackVersion latestVersion = getLatestModPackVersion(selectedModPack);
-                userInfo profile = getSelectedProfile();
-                getMinecraft(selectedModpack, latestVersion.minecraft);
-                getAssetsForVersion(latestVersion.minecraft);
-                getLibrariesForVersion(latestVersion.minecraft, latestVersion.forgeVersion);
-                getNatives(selectedModPack, latestVersion.forgeVersion, latestVersion.minecraft);
-                getMods(selectedModPack, latestVersion);
+                
+                logTextBox.Clear();
+                _downloadList.Clear();
+                GetModPacks();
+                GetModPackInfos();
 
-                string fileLoc = location + "\\modpacks\\" + selectedModpack.name + "\\version.json";
+                ChangeSelectedModPack(_selectedModpack.name);
+                
 
-                if(!File.Exists(fileLoc))
+
+                JCmodpackVersion latestVersion = GetLatestModPackVersion(selectedModPack);
+                _usedVersion = latestVersion.minecraft;
+                Console.WriteLine("Starte Modpack: \"{0}\" V:\"{1}\" Benutzer: \"{2}\"", _selectedModpack.display_name, _selectedModpack.latest, user.displayName);
+
+                userInfo profile = GetSelectedProfile();
+                GetMinecraft(_selectedModpack, latestVersion.minecraft);
+                GetAssetsForVersion(latestVersion.minecraft);
+                GetLibrariesForVersion(_selectedModpack, latestVersion.minecraft, latestVersion.forgeVersion);
+                GetNatives(latestVersion.forgeVersion, latestVersion.minecraft);
+                GetMods(latestVersion);
+
+                string fileLoc = _location + "\\modpacks\\" + _selectedModpack.name + "\\version.json";
+
+                bool firstRun = false;
+
+                if (!File.Exists(fileLoc))
                 {
                     string directory = Path.GetDirectoryName(fileLoc);
-                    Directory.CreateDirectory(directory);
+                    if (directory != null) Directory.CreateDirectory(directory);
                     File.WriteAllText(fileLoc, JsonConvert.SerializeObject(new JCversion()));
+                    firstRun = true;
                 }
 
-                string latestVersionString = selectedModpack.latest;
+                string latestVersionString = _selectedModpack.latest;
                 string localVersionString = JsonConvert.DeserializeObject<JCversion>(File.ReadAllText(fileLoc)).version;
 
 
-                if(!latestVersionString.Equals(localVersionString))
+                if (!latestVersionString.Equals(localVersionString))
                 {
-                    DownloadForm dlf = new DownloadForm();
-                    dlf.senderForm = this;
-                    dlf.downloadList = downloadList;
-                    dlf.location = location;
-                    dlf.modpack = selectedModpack;
-                    dlf.ShowDialog(); 
+                    if (!firstRun)
+                    {
+                        DialogResult result = MessageBox.Show(Resources.MainWindow_LaunchModPack_, Resources.MainWindow_LaunchModPack_New_Update_Available, MessageBoxButtons.YesNo, MessageBoxIcon.None);
+                        switch (result)
+                        {
+                            case DialogResult.Yes:
+                            {
+                                DownloadForm dlf = new DownloadForm
+                                {
+                                    SenderForm = this,
+                                    DownloadList = _downloadList,
+                                    SaveLocation = _location,
+                                    Modpack = _selectedModpack
+                                };
+                                dlf.ShowDialog();
+                            }
+                                break;
+                            case DialogResult.No:
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        DownloadForm dlf = new DownloadForm
+                        {
+                            SenderForm = this,
+                            DownloadList = _downloadList,
+                            SaveLocation = _location,
+                            Modpack = _selectedModpack
+                        };
+                        dlf.ShowDialog();
+                    }
                 }
 
-                ProcessStartInfo start = new ProcessStartInfo();
-                start.UseShellExecute = false;
-                start.RedirectStandardError = true;
-                start.RedirectStandardOutput = true;
+                ProcessStartInfo start = new ProcessStartInfo
+                {
+                    UseShellExecute = false,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                    FileName = getJavaInstallationPath()
+                };
 
-                start.FileName = getJavaInstallationPath();
-                
-                string workingDirectory = location + "\\modpacks\\" + selectedModpack.name;
+                string workingDirectory = _location + "\\modpacks\\" + _selectedModpack.name;
 
                 start.WorkingDirectory = workingDirectory;
 
                 string arguments = "";
                 arguments += "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump ";
                 //arguments += "-Xmx4096m ";
-                arguments += "-Xmx" + Properties.Settings.Default.ram + "m ";
+                arguments += "-Xmx" + Settings.Default.ram + "m ";
                 //arguments += "-XX:MaxPermSize=256m ";
-                arguments += Properties.Settings.Default.javaParameters + " ";
-                arguments += @"-Djava.library.path=" + location + @"\modpacks\" + selectedModpack.name + @"\bin\" + latestVersion.minecraft + "-" + latestVersion.forgeVersion + "-natives ";
+                arguments += Settings.Default.javaParameters + " ";
+                arguments += @"-Djava.library.path=" + _location + @"\modpacks\" + _selectedModpack.name + @"\bin\" + latestVersion.minecraft + "-" + latestVersion.forgeVersion + "-natives ";
                 //arguments += "-Dminecraft.applet.TargetDirectory=" + workingDirectory + " ";
                 arguments += "-cp ";
-                for(int i = 0; i < downloadList.Count; i++)
+                arguments = _downloadList.Where(t => t.type.Equals("libraries")).Aggregate(arguments, (current, t) => current + (t.saveLocations[0] + ";"));
+                arguments += _location + @"\modpacks\" + _selectedModpack.name + "\\bin\\minecraft.jar net.minecraft.launchwrapper.Launch ";
+                switch (latestVersion.minecraft)
                 {
-                    if(downloadList[i].type.Equals("libraries"))
-                    {
-                        arguments += downloadList[i].saveLocations[0] + ";";
-                    }
+                    
+                    case "1.6.4":
+                        arguments += "--username " + profile.displayName + " ";
+                        arguments += "--session token:" + profile.accessToken + ":" + profile.uuid + " ";
+                        arguments += "--version 1.6.4 ";
+                        arguments += "--gameDir " + workingDirectory + " ";
+                        arguments += "--assetsDir " + _location + @"\assets\virtual\legacy ";
+                        arguments += "--assetIndex 1.6.4 ";
+                        arguments += "--tweakClass cpw.mods.fml.common.launcher.FMLTweaker";
+                        break;
+                    default:
+                        arguments += "--username " + profile.displayName + " ";
+                        arguments += "--version 1.7.10 ";
+                        arguments += "--gameDir " + workingDirectory + " ";
+                        arguments += "--assetsDir " + _location + @"\assets ";
+                        arguments += "--assetIndex 1.7.10 ";
+                        arguments += "--uuid " + profile.uuid + " ";
+                        arguments += "--accessToken " + profile.accessToken + " ";
+                        arguments += "--userProperties {} ";
+                        arguments += "--userType mojang ";
+                        arguments += "--tweakClass cpw.mods.fml.common.launcher.FMLTweaker";
+                        break;
                 }
-                arguments += location + @"\modpacks\" + selectedModpack.name + "\\bin\\minecraft.jar net.minecraft.launchwrapper.Launch ";
-                arguments += "--username " + profile.displayName + " "; 
-                arguments += "--version 1.7.10 ";
-                arguments += "--gameDir " + workingDirectory + " ";
-                arguments += "--assetsDir " + location + @"\assets ";
-                arguments += "--assetIndex 1.7.10 ";
-                arguments += "--uuid " + profile.uuid + " ";
-                arguments += "--accessToken " + profile.accessToken + " ";
-                arguments += "--userProperties {} ";
-                arguments += "--userType mojang ";
-                arguments += "--tweakClass cpw.mods.fml.common.launcher.FMLTweaker";
-
 
 
                 Console.WriteLine(arguments);
                 start.Arguments = arguments;
 
+                mainTabControl.SelectedIndex = mainTabControl.TabPages.Count - 1;
+
                 using (Process process = Process.Start(start))
                 {
+                    if (process == null) return;
                     process.OutputDataReceived += Minecraft_OutputDataReceived;
                     process.ErrorDataReceived += Minecraft_ErrorDataReceived;
                     process.BeginErrorReadLine();
                     process.BeginOutputReadLine();
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
@@ -560,10 +688,11 @@ namespace MechZone_ModPack_Launcher_v2
         {
             try
             {
-                addLogText(e.Data, "error");
-            } catch (Exception ex)
+                AddLogText(e.Data, "error", _usedVersion);
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
@@ -571,97 +700,109 @@ namespace MechZone_ModPack_Launcher_v2
         {
             try
             {
-                addLogText(e.Data, "output");
-            } catch (Exception ex)
+                AddLogText(e.Data, "output", _usedVersion);
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
-        delegate void logTextAdd(string text, string type);
+        delegate void LogTextAdd(string text, string type, string version);
 
-        void addLogText(string text, string type)
+        void AddLogText(string text, string type, string version)
         {
-            if(InvokeRequired)
+
+            if (InvokeRequired)
             {
-                BeginInvoke(new logTextAdd(addLogText), new object[] { text, type });
+                BeginInvoke(new LogTextAdd(AddLogText), new object[] { text, type , version});
                 return;
             }
 
-            if(text == null)
+            if (text == null)
             {
                 return;
             }
 
-            if(type.Equals("error") || text.Contains("Warning") || text.Contains("WARN") || text.Contains("ERROR") || text.Contains("Exception"))
+            if ((version != "1.6.4" && type.Equals("error")) || text.Contains("Warning") || text.Contains("WARN") || text.Contains("ERROR") || text.Contains("Exception"))
             {
                 logTextBox.AppendText(text + "\n", Color.Red);
-            } else if(text.Contains("CHAT"))
+            }
+            else if (text.Contains("CHAT"))
             {
                 logTextBox.AppendText(text + "\n", Color.Green);
-            } else if(text.Contains("INFO"))
+            }
+            else if (text.Contains("INFO"))
             {
                 logTextBox.AppendText(text + "\n", Color.Blue);
-            } else
+            }
+            else
             {
                 logTextBox.AppendText(text + "\n");
             }
             logTextBox.Focus();
         }
 
-        private void getNatives(JCmodpackInfo selectedModPack, string forgeVersion, string minecraft)
+        private void GetNatives(string forgeVersion, string minecraft)
         {
             try
             {
-                JCdownloadList data = new JCdownloadList();
-                data.link = "http://solder.mechzone.net/natives/" + minecraft + "-" + forgeVersion + "-natives.zip";
+                JCdownloadList data = new JCdownloadList
+                {
+                    link = "http://solder.mechzone.net/natives/" + minecraft + "-" + forgeVersion + "-natives.zip"
+                };
+                Console.WriteLine("natives:{0}", data.link);
                 data.hash = getStringFromUrl("http://solder.mechzone.net/natives/" + minecraft + "-" + forgeVersion + "-natives.zip.sha1");
                 data.hashType = "sha1";
                 data.type = "natives";
-                data.saveLocations = new List<string>();
-                data.saveLocations.Add(location + "\\temp\\" + "natives-" + minecraft + "-" + forgeVersion + ".zip");
-                downloadList.Add(data);
-            } catch (Exception ex)
+                data.saveLocations = new List<string>
+                {
+                    _location + "\\temp\\" + "natives-" + minecraft + "-" + forgeVersion + ".zip"
+                };
+                _downloadList.Add(data);
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
-        private JCmodpackVersion getLatestModPackVersion(JCmodpackInfo modPack)
+        private JCmodpackVersion GetLatestModPackVersion(JCmodpackInfo modPack)
         {
-            string url = solderApiUrl + "modpack/" + modPack.name + "/" + modPack.latest;
+            string url = _solderApiUrl + "modpack/" + modPack.name;
             string data = getStringFromUrl(url);
-            JCmodpackVersion json = JsonConvert.DeserializeObject<JCmodpackVersion>(data);
-            return json;
+            JCmodpackInfo json = JsonConvert.DeserializeObject<JCmodpackInfo>(data);
+            _selectedModpack = json;
+            url = _solderApiUrl + "modpack/" + json.name + "/" + json.latest;
+            data = getStringFromUrl(url);
+            JCmodpackVersion json2 = JsonConvert.DeserializeObject<JCmodpackVersion>(data);
+            return json2;
         }
 
-        private userInfo getSelectedProfile()
+        private userInfo GetSelectedProfile()
         {
             try
             {
-                JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\mz_launcher_profiles.json"));
+                JCprofileSave profiles = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(_location + @"\mz_launcher_profiles.json"));
                 string selectedKey = null;
-                foreach(string key in profiles.profiles.Keys)
+                foreach (string key in profiles.profiles.Keys)
                 {
-                    if(profiles.profiles[key].name.Equals(profileBox.SelectedItem.ToString()))
+                    if (profiles.profiles[key].name.Equals(profileBox.SelectedItem.ToString()))
                     {
                         selectedKey = profiles.profiles[key].playerUUID;
                     }
 
                 }
 
-                if(selectedKey != null)
+                if (selectedKey != null)
                 {
                     return profiles.authenticationDatabase[selectedKey];
-                } else
-                {
-                    return null;
                 }
-
-
-            } catch (Exception ex)
+                return null;
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
 
             }
             return null;
@@ -671,110 +812,142 @@ namespace MechZone_ModPack_Launcher_v2
         {
             try
             {
-                changeSelectedModPack(Properties.Settings.Default.selectedModPack);
-                Console.WriteLine("Selected ModPack: " + Properties.Settings.Default.selectedModPack);
-            } catch (Exception ex)
+                ChangeSelectedModPack(Settings.Default.selectedModPack);
+                Console.WriteLine("Selected ModPack: {0}", Settings.Default.selectedModPack);
+
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
         private void mainWindow_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Console.WriteLine("Close selected: " + Properties.Settings.Default.selectedModPack);
-            Properties.Settings.Default.Save();
+            Console.WriteLine("Close selected: {0}", Settings.Default.selectedModPack);
+            Settings.Default.Save();
         }
 
         private void infoWebBrowser_Navigating(object sender, WebBrowserNavigatingEventArgs e)
         {
+            if (_changingUrl)
+            {
+                _changingUrl = false; 
+                return;
+            }
             e.Cancel = true;
+            Console.WriteLine(_changingUrl);
+            Console.WriteLine("browser start");
             Process.Start(e.Url.ToString());
         }
 
-        private void getAssetsForVersion(string version)
+        private void GetAssetsForVersion(string version)
         {
             try
             {
-                string web = getStringFromUrl("https://s3.amazonaws.com/Minecraft.Download/indexes/" + version + ".json");
-                string startLink = "http://resources.download.minecraft.net/";
-                JCassets json = JsonConvert.DeserializeObject<JCassets>(web);
-                downloadList.Add(new JCdownloadList()
+                string link;
+                if (version == "1.6.4")
                 {
-                    link = "https://s3.amazonaws.com/Minecraft.Download/indexes/" + version + ".json",
+                    link = "https://s3.amazonaws.com/Minecraft.Download/indexes/legacy.json";
+                }
+                else
+                {
+                    link = "https://s3.amazonaws.com/Minecraft.Download/indexes/" + version + ".json";
+                }
+                string web = getStringFromUrl(link);
+
+                const string startLink = "http://resources.download.minecraft.net/";
+                JCassets json = JsonConvert.DeserializeObject<JCassets>(web);
+                _downloadList.Add(new JCdownloadList
+                {
+                    link = link,
                     hash = "",
                     hashType = "",
-                    saveLocations = new List<string>() { location + "\\assets\\indexes\\" + version + ".json" },
+                    saveLocations = new List<string> { _location + "\\assets\\indexes\\" + version + ".json" },
                     type = "assets"
 
                 });
 
-                foreach(String key in json.objects.Keys)
+                foreach (String key in json.objects.Keys)
                 {
                     try
                     {
                         string dllink = startLink + json.objects[key].hash.Substring(0, 2) + "/" + json.objects[key].hash;
-                        JCdownloadList data = new JCdownloadList();
-                        data.link = dllink;
-                        data.hash = json.objects[key].hash;
-                        data.hashType = "sha1";
-                        data.type = "assets";
-                        data.saveLocations = new List<string>();
-                        data.saveLocations.Add(location + "\\assets\\objects\\" + json.objects[key].hash.Substring(0, 2) + "\\" + json.objects[key].hash);
+                        JCdownloadList data = new JCdownloadList
+                        {
+                            link = dllink,
+                            hash = json.objects[key].hash,
+                            hashType = "sha1",
+                            type = "assets",
+                            saveLocations =
+                                new List<string>
+                                {
+                                    _location + "\\assets\\objects\\" + json.objects[key].hash.Substring(0, 2) + "\\" +
+                                    json.objects[key].hash,
+                                    _location + "\\assets\\virtual\\legacy\\" + key.Replace('/', '\\')
+                                }
+                        };
                         //data.saveLocations.Add(location + "\\assets\\virtual\\legacy\\" + key.Replace('/', '\\'));
-                        downloadList.Add(data);
-                    } catch (Exception ex)
+                        _downloadList.Add(data);
+                    }
+                    catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                        Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
                     }
 
 
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
-        private void getLibrariesForVersion(string version, string forgeVersion)
+        private void GetLibrariesForVersion(JCmodpackInfo modpack, string version, string forgeVersion)
         {
             try
             {
                 string dlUrl = "http://solder.mechzone.net/install_profile/" + version + "-" + forgeVersion + ".json";
-                Console.WriteLine(dlUrl);
+                //Console.WriteLine(dlUrl);
                 string json = getStringFromUrl(dlUrl);
                 JCmcInfo g = JsonConvert.DeserializeObject<JCmcInfo>(json);
-                for(int i = 0; i < g.versionInfo.libraries.Count; i++)
+                foreach (Library t in g.versionInfo.libraries)
                 {
                     string dlLink = "";
-                    string[] parts = g.versionInfo.libraries[i].name.Split(':');
+                    string[] parts = t.name.Split(':');
                     dlLink += parts[0].Replace('.', '/') + "/";
                     dlLink += parts[1] + "/";
                     dlLink += parts[2] + "/";
                     dlLink += parts[1] + "-" + parts[2];
-                    if(g.versionInfo.libraries[i].natives != null)
+                    if (t.natives != null)
                     {
-                        dlLink += "-" + g.versionInfo.libraries[i].natives.windows.Replace("${arch}", "64");
+                        dlLink += "-" + t.natives.windows.Replace("${arch}", "64");
                     }
                     dlLink += ".jar";
                     JCdownloadList data = new JCdownloadList();
-                    if(g.versionInfo.libraries[i].url != null)
+                    if (t.url != null)
                     {
-                        if(dlLink.Contains("net/minecraftforge/forge/"))
+                        if (dlLink.Contains("net/minecraftforge/"))
                         {
-                            data.link = g.versionInfo.libraries[i].url + dlLink.Replace(".jar", "-universal.jar");
-                        } else {
-                            data.link = g.versionInfo.libraries[i].url + dlLink;
+                            data.link = t.url + dlLink.Replace(".jar", "-universal.jar");
                         }
-                        if(g.versionInfo.libraries[i].checksums != null)
+                        else
                         {
-                            data.hash = g.versionInfo.libraries[i].checksums[0];
+                            data.link = t.url + dlLink;
+                        }
+                        if (t.checksums != null)
+                        {
+                            data.hash = t.checksums[0];
                             data.hashType = "";
-                        } else
+                        }
+                        else
                         {
                             data.hash = "";
                             data.hashType = "";
                         }
-                    } else
+                    }
+                    else
                     {
                         data.link = ("https://libraries.minecraft.net/" + dlLink);
                         data.hash = getStringFromUrl("https://libraries.minecraft.net/" + dlLink + ".sha1");
@@ -783,19 +956,22 @@ namespace MechZone_ModPack_Launcher_v2
 
 
                     data.type = "libraries";
-                    data.saveLocations = new List<string>();
-                    data.saveLocations.Add(location + "\\libraries\\" + dlLink);
-                    downloadList.Add(data);
-
+                    data.saveLocations = new List<string>
+                    {
+                        _location + "\\modpacks\\" + modpack.name + "\\libraries\\" + dlLink
+                    };
+                    _downloadList.Add(data);
                 }
 
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
-        private void getForge(JCmodpackInfo modpack, string forgeVersion, string minecraftVersion)
+/*
+        private void GetForge(string forgeVersion, string minecraftVersion)
         {
             try
             {
@@ -815,17 +991,19 @@ namespace MechZone_ModPack_Launcher_v2
                 data.hash = getStringFromUrl(dllink + ".sha1");
                 data.hashType = "sha1";
                 data.saveLocations = new List<string>();
-                data.saveLocations.Add(location + "\\libraries\\net\\minecraftforge\\minecraftforge\\" + forgeVersion + "\\minecraftforge-" + forgeVersion + ".jar");
+                data.saveLocations.Add(_location + "\\libraries\\net\\minecraftforge\\minecraftforge\\" + forgeVersion + "\\minecraftforge-" + forgeVersion + ".jar");
                 data.type = "forge";
-                downloadList.Add(data);
+                _downloadList.Add(data);
 
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
+*/
 
-        private void getMinecraft(JCmodpackInfo modpack, string minecraftVersion)
+        private void GetMinecraft(JCmodpackInfo modpack, string minecraftVersion)
         {
             try
             {
@@ -834,39 +1012,44 @@ namespace MechZone_ModPack_Launcher_v2
                 dllink += "/";
                 dllink += minecraftVersion;
                 dllink += ".jar";
-                JCdownloadList data = new JCdownloadList();
-                data.link = dllink;
-                data.hash = "";
-                data.hashType = "";
-                data.saveLocations = new List<string>();
-                data.saveLocations.Add(location + "\\modpacks\\" + modpack.name + "\\bin\\minecraft.jar");
-                data.type = "minecraft";
-                downloadList.Add(data);
-            } catch (Exception ex)
+                JCdownloadList data = new JCdownloadList
+                {
+                    link = dllink,
+                    hash = "",
+                    hashType = "",
+                    saveLocations =
+                        new List<string> {_location + "\\modpacks\\" + modpack.name + "\\bin\\minecraft.jar"},
+                    type = "minecraft"
+                };
+                _downloadList.Add(data);
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
 
         }
 
-        private void getMods(JCmodpackInfo modpack, JCmodpackVersion build)
+        private void GetMods(JCmodpackVersion build)
         {
             try
             {
-                for(int i = 0; i < build.mods.Count; i++)
+                foreach (Mod t in build.mods)
                 {
-                    JCdownloadList data = new JCdownloadList();
-                    data.hash = build.mods[i].md5;
-                    data.hashType = "md5";
-                    data.link = build.mods[i].url;
-                    data.saveLocations = new List<string>();
-                    data.saveLocations.Add(location + "\\temp\\" + build.mods[i].name + "-" + build.mods[i].version + ".zip");
-                    data.type = "mods";
-                    downloadList.Add(data);
+                    JCdownloadList data = new JCdownloadList
+                    {
+                        hash = t.md5,
+                        hashType = "md5",
+                        link = t.url,
+                        saveLocations = new List<string> {_location + "\\temp\\" + t.name + "-" + t.version + ".zip"},
+                        type = "mods"
+                    };
+                    _downloadList.Add(data);
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
@@ -874,18 +1057,20 @@ namespace MechZone_ModPack_Launcher_v2
         {
             string environmentPath = Environment.GetEnvironmentVariable("JAVA_HOME");
             //MessageBox.Show(environmentPath);
-            if(!string.IsNullOrEmpty(environmentPath))
+            if (!string.IsNullOrEmpty(environmentPath))
             {
                 return environmentPath + "\\bin\\javaw.exe";
             }
 
-            string javaKey = "SOFTWARE\\JavaSoft\\Java Runtime Environment\\";
-            using (Microsoft.Win32.RegistryKey rk = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(javaKey))
+            const string javaKey = "SOFTWARE\\JavaSoft\\Java Runtime Environment\\";
+            using (RegistryKey rk = Registry.LocalMachine.OpenSubKey(javaKey))
             {
+                if (rk == null) return null;
                 string currentVersion = rk.GetValue("CurrentVersion").ToString();
-                using (Microsoft.Win32.RegistryKey key = rk.OpenSubKey(currentVersion))
+                using (RegistryKey key = rk.OpenSubKey(currentVersion))
                 {
-                    return key.GetValue("JavaHome").ToString() + "\\bin\\javaw.exe"; ;
+                    if (key != null) return key.GetValue("JavaHome") + "\\bin\\javaw.exe";
+                    return null;
                 }
             }
         }
@@ -896,9 +1081,10 @@ namespace MechZone_ModPack_Launcher_v2
             {
                 Console.WriteLine(e.LinkText);
                 Process.Start(e.LinkText);
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
 
@@ -907,69 +1093,72 @@ namespace MechZone_ModPack_Launcher_v2
 
             try
             {
-                int item = Properties.Settings.Default.selectedProfile;
-                JCprofileSave save = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(location + @"\\mz_launcher_profiles.json"));
+                Invalidate(GetSelectedProfile().accessToken, _uuid);
+                int item = Settings.Default.selectedProfile;
+                JCprofileSave save = JsonConvert.DeserializeObject<JCprofileSave>(File.ReadAllText(_location + @"\\mz_launcher_profiles.json"));
                 string profile = profileBox.Items[item].ToString();
                 string uuid = "";
                 string name2 = "";
-                foreach(string name in save.profiles.Keys)
+                foreach (string name in save.profiles.Keys.Where(name => name.Equals(profile)))
                 {
-                    if(name.Equals(profile))
-                    {
-                        uuid = save.profiles[name].playerUUID;
-                        name2 = name;
-                        
-                    }
+                    uuid = save.profiles[name].playerUUID;
+                    name2 = name;
                 }
 
                 save.authenticationDatabase.Remove(uuid);
                 save.profiles.Remove(name2);
-                File.WriteAllText(location + @"\\mz_launcher_profiles.json", JsonConvert.SerializeObject(save,Formatting.Indented));
+                File.WriteAllText(_location + @"\\mz_launcher_profiles.json", JsonConvert.SerializeObject(save, Formatting.Indented));
 
                 profileBox.Items.Remove(profileBox.Items[item]);
-            } catch (Exception ex)
+
+                
+
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
 
         }
-        
+
         private void ramSelector_Scroll(object sender, ScrollEventArgs e)
         {
-            selectedRam.Text = ramSelector.Value/1024 + " GB (" + ramSelector.Value + " MB)";
-            
+            selectedRam.Text = string.Format("{0} GB ({1} MB)", ramSelector.Value / 1024, ramSelector.Value);
+
         }
-        
+
         private void ramSelector_MouseUp(object sender, MouseEventArgs e)
         {
-            Console.WriteLine("ram save");
-            Properties.Settings.Default.ram = ramSelector.Value;
-            Properties.Settings.Default.Save();
+            Settings.Default.ram = ramSelector.Value;
+            Settings.Default.Save();
         }
 
         private void extraJavaParameters_TextChanged(object sender, EventArgs e)
         {
-            Properties.Settings.Default.javaParameters = extraJavaParameters.Text;
-            Properties.Settings.Default.Save();
+            Settings.Default.javaParameters = extraJavaParameters.Text;
+            Settings.Default.Save();
         }
 
         private void changeJavaPath_Click(object sender, EventArgs e)
         {
 
-            OpenFileDialog fd = new OpenFileDialog();
-            fd.Filter = "javaw File |javaw.exe";
-            fd.InitialDirectory = Path.GetDirectoryName(getJavaInstallationPath());
-            fd.FilterIndex = 1;
-            if(fd.ShowDialog() == DialogResult.OK)
+            OpenFileDialog fd = new OpenFileDialog
+            {
+                Filter = @"javaw File |javaw.exe",
+                InitialDirectory = Path.GetDirectoryName(getJavaInstallationPath()),
+                FilterIndex = 1
+            };
+            if (fd.ShowDialog() == DialogResult.OK)
             {
                 try
                 {
-                    Properties.Settings.Default.javaPath = fd.FileName;
-                    Properties.Settings.Default.Save();
-                    
-                } catch (Exception ex)
+                    Settings.Default.javaPath = fd.FileName;
+                    Settings.Default.Save();
+
+                }
+                catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                    Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
                 }
             }
 
@@ -978,33 +1167,26 @@ namespace MechZone_ModPack_Launcher_v2
 
         private void changeInstallPath_Click(object sender, EventArgs e)
         {
-            FolderBrowserDialog bd = new FolderBrowserDialog();
-            bd.SelectedPath = location;
-            bd.ShowNewFolderButton = true;
-            if(bd.ShowDialog() == DialogResult.OK)
+            FolderBrowserDialog bd = new FolderBrowserDialog {SelectedPath = _location, ShowNewFolderButton = true};
+            if (bd.ShowDialog() == DialogResult.OK)
             {
-                if(!IsDirectoryEmpty(bd.SelectedPath))
+                /* if(!IsDirectoryEmpty(bd.SelectedPath))
+                 {
+                     MessageBox.Show("Directory is not empty.\nPlease select a different directory!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                 } else
+                 {*/
+                Settings.Default.installPath = bd.SelectedPath;
+                Settings.Default.Save();
+                installPathTextBox.Text = bd.SelectedPath;
+                string oldlocation = _location;
+                _location = bd.SelectedPath;
+                if (!File.Exists(_location + @"\mz_launcher_profiles.json"))
                 {
-                    MessageBox.Show("Directory is not empty.\nPlease select a different directory!","Error",MessageBoxButtons.OK,MessageBoxIcon.Error);
-                } else
-                {
-                    Properties.Settings.Default.installPath = bd.SelectedPath;
-                    Properties.Settings.Default.Save();
-                    installPathTextBox.Text = bd.SelectedPath;
-                    string oldlocation = location;
-                    location = bd.SelectedPath;
-                    if(!File.Exists(location + @"\mz_launcher_profiles.json"))
-                    {
-                        File.Copy(oldlocation + @"\mz_launcher_profiles.json", location + @"\mz_launcher_profiles.json");
+                    File.Copy(oldlocation + @"\mz_launcher_profiles.json", _location + @"\mz_launcher_profiles.json");
 
-                    }
                 }
+                //}
             }
-        }
-
-        public bool IsDirectoryEmpty(string path)
-        {
-            return !Directory.EnumerateFileSystemEntries(path).Any();
         }
     }
 
@@ -1020,9 +1202,10 @@ namespace MechZone_ModPack_Launcher_v2
                 box.SelectionColor = color;
                 box.AppendText(text);
                 box.SelectionColor = box.ForeColor;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+                Console.WriteLine("{0}\n{1}", ex.Message, ex.StackTrace);
             }
         }
     }
