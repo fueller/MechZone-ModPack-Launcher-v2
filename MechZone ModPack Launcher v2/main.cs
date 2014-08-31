@@ -619,7 +619,7 @@ namespace MechZone_ModPack_Launcher_v2
                     UseShellExecute = false,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
-                    FileName = getJavaInstallationPath()
+                    FileName = javaPathTextBox.Text
                 };
 
                 string workingDirectory = _location + "\\modpacks\\" + _selectedModpack.name;
@@ -632,11 +632,11 @@ namespace MechZone_ModPack_Launcher_v2
                 arguments += "-Xmx" + Settings.Default.ram + "m ";
                 //arguments += "-XX:MaxPermSize=256m ";
                 arguments += Settings.Default.javaParameters + " ";
-                arguments += @"-Djava.library.path=" + _location + @"\modpacks\" + _selectedModpack.name + @"\bin\" + latestVersion.minecraft + "-" + latestVersion.forgeVersion + "-natives ";
+                arguments += "-Djava.library.path=\"" + _location + @"\modpacks\" + _selectedModpack.name + @"\bin\" + latestVersion.minecraft + "-" + latestVersion.forgeVersion + "-natives\" ";
                 //arguments += "-Dminecraft.applet.TargetDirectory=" + workingDirectory + " ";
                 arguments += "-cp ";
-                arguments = _downloadList.Where(t => t.type.Equals("libraries")).Aggregate(arguments, (current, t) => current + (t.saveLocations[0] + ";"));
-                arguments += _location + @"\modpacks\" + _selectedModpack.name + "\\bin\\minecraft.jar net.minecraft.launchwrapper.Launch ";
+                arguments = _downloadList.Where(t => t.type.Equals("libraries")).Aggregate(arguments, (current, t) => current + ("\"" + t.saveLocations[0] + "\";"));
+                arguments += "\"" + _location + @"\modpacks\" + _selectedModpack.name + "\\bin\\minecraft.jar\" net.minecraft.launchwrapper.Launch ";
                 switch (latestVersion.minecraft)
                 {
                     
@@ -644,16 +644,16 @@ namespace MechZone_ModPack_Launcher_v2
                         arguments += "--username " + profile.displayName + " ";
                         arguments += "--session token:" + profile.accessToken + ":" + profile.uuid + " ";
                         arguments += "--version 1.6.4 ";
-                        arguments += "--gameDir " + workingDirectory + " ";
-                        arguments += "--assetsDir " + _location + @"\assets\virtual\legacy ";
+                        arguments += "--gameDir \"" + workingDirectory + "\" ";
+                        arguments += "--assetsDir \"" + _location + "\\assets\\virtual\\legacy\" ";
                         arguments += "--assetIndex 1.6.4 ";
                         arguments += "--tweakClass cpw.mods.fml.common.launcher.FMLTweaker";
                         break;
                     default:
                         arguments += "--username " + profile.displayName + " ";
                         arguments += "--version 1.7.10 ";
-                        arguments += "--gameDir " + workingDirectory + " ";
-                        arguments += "--assetsDir " + _location + @"\assets ";
+                        arguments += "--gameDir \"" + workingDirectory + "\" ";
+                        arguments += "--assetsDir \"" + _location + "\\assets\" ";
                         arguments += "--assetIndex 1.7.10 ";
                         arguments += "--uuid " + profile.uuid + " ";
                         arguments += "--accessToken " + profile.accessToken + " ";
@@ -1152,6 +1152,7 @@ namespace MechZone_ModPack_Launcher_v2
             {
                 try
                 {
+                    javaPathTextBox.Text = fd.FileName;
                     Settings.Default.javaPath = fd.FileName;
                     Settings.Default.Save();
 
