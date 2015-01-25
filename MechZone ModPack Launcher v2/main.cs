@@ -15,6 +15,7 @@ using System.Deployment.Application;
 using System.Reflection;
 using System.Diagnostics;
 using MechZone_ModPack_Launcher_v2.jsonClasses;
+using EQATEC.Analytics.Monitor;
 
 namespace MechZone_ModPack_Launcher_v2
 {
@@ -24,25 +25,45 @@ namespace MechZone_ModPack_Launcher_v2
         readonly Dictionary<string, JCmodpackInfo> _modPackInfos = new Dictionary<string, JCmodpackInfo>();
         private const string SolderUrl = @"http://solder.mechzone.net/";
         readonly string _solderApiUrl;
-        string _location = "%appdata%/.mechzoneV2";
+        string appdata = Environment.GetEnvironmentVariable("appdata");
+        string _location = Environment.GetEnvironmentVariable("appdata") + "/.mechzoneV2";
         readonly Guid _uuid;
         //Dictionary<string, JCdownloadList> downloadList = new Dictionary<string, JCdownloadList>();
         readonly List<JCdownloadList> _downloadList = new List<JCdownloadList>();
         JCmodpackInfo _selectedModpack = new JCmodpackInfo();
         private bool _changingUrl;
+        IAnalyticsMonitor monitor;
 
 
         public MainWindow()
         {
+            var settings = AnalyticsMonitorFactory.CreateSettings("a3a2b8cec6b3429f8048eda51265cc1b");
+            settings.LoggingInterface = AnalyticsMonitorFactory.CreateTraceMonitor();
+            settings.TestMode = Debugger.IsAttached;
+            settings.Version = ApplicationDeployment.IsNetworkDeployed ? ApplicationDeployment.CurrentDeployment.CurrentVersion : Assembly.GetExecutingAssembly().GetName().Version;
+            monitor = AnalyticsMonitorFactory.Create(settings);
+            
+            try
+            {
+                monitor.Start();
+
+                AppDomain.CurrentDomain.UnhandledException += (s, e) => monitor.TrackException(e.ExceptionObject as Exception, "AppDomain.UnhandledException");
+                Application.ThreadException += (s, e) => monitor.TrackException(e.Exception, "Application.ThreadException");
+            }
+            finally
+            {
+                //Analytics.Instance.Stop();
+            }
+
+            
+
             try
             {
 
                 InitializeComponent();
 
                 mainTabControl.SelectedIndex = 0;
-                string appdata = Environment.GetEnvironmentVariable("appdata");
-                _location = appdata + "\\.mechzoneV2";
-                _solderApiUrl = SolderUrl + @"index.php/api/";
+                _solderApiUrl = SolderUrl + @"api/";
                 if (!Directory.Exists(_location))
                 {
                     Directory.CreateDirectory(_location);
@@ -64,6 +85,8 @@ namespace MechZone_ModPack_Launcher_v2
                 Text = string.Format("{0} {1}", Text, (ApplicationDeployment.IsNetworkDeployed ? ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString() : Assembly.GetExecutingAssembly().GetName().Version.ToString()));
 
                 metroButton1.Visible = Debugger.IsAttached;
+
+                
 
                 foreach (MetroColorStyle color in (MetroColorStyle[])Enum.GetValues(typeof(MetroColorStyle)))
                 {
@@ -291,9 +314,17 @@ namespace MechZone_ModPack_Launcher_v2
 
         string getStringFromUrl(string url)
         {
-            WebClient client = new WebClient {Proxy = null};
-            String erg = client.DownloadString(url);
-            return erg;
+            try
+            {
+                WebClient client = new WebClient {Proxy = null};
+                String erg = client.DownloadString(url);
+                return erg;
+            }
+            catch (Exception)
+            {
+                
+                throw;
+            }
         }
 
         private void metroButton1_Click(object sender, EventArgs e)
@@ -371,7 +402,6 @@ namespace MechZone_ModPack_Launcher_v2
             }
 
             HttpWebResponse httpWebResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-// ReSharper disable once AssignNullToNotNullAttribute
             using (StreamReader reader = new StreamReader(httpWebResponse.GetResponseStream()))
             {
                 string response = reader.ReadToEnd();
@@ -404,7 +434,6 @@ namespace MechZone_ModPack_Launcher_v2
 
                 HttpWebResponse httpWebResponse = (HttpWebResponse)httpWebRequest.GetResponse();
 
-// ReSharper disable once AssignNullToNotNullAttribute
                 using (StreamReader reader = new StreamReader(httpWebResponse.GetResponseStream()))
                 {
                     string response = reader.ReadToEnd();
@@ -462,6 +491,7 @@ namespace MechZone_ModPack_Launcher_v2
 
         private void addProfile_Click(object sender, EventArgs e)
         {
+            monitor.TrackFeature("createProfile");
             try
             {
                 AddProfile form = new AddProfile
@@ -506,6 +536,7 @@ namespace MechZone_ModPack_Launcher_v2
 
         private void loginButton_Click(object sender, EventArgs e)
         {
+            monitor.TrackFeature("startGame." + _selectedModpack.name);
             try
             {
                 userInfo user = GetSelectedProfile();
@@ -551,16 +582,16 @@ namespace MechZone_ModPack_Launcher_v2
                 
 
 
-                JCmodpackVersion latestVersion = GetLatestModPackVersion(selectedModPack);
-                _usedVersion = latestVersion.minecraft;
-                Console.WriteLine("Starte Modpack: \"{0}\" V:\"{1}\" Benutzer: \"{2}\"", _selectedModpack.display_name, _selectedModpack.latest, user.displayName);
+                JCmodpackVersion recommendedVersion = GetRecommendedModPackVersion(selectedModPack);
+                _usedVersion = recommendedVersion.minecraft;
+                Console.WriteLine("Starte Modpack: \"{0}\" V:\"{1}\" Benutzer: \"{2}\"", _selectedModpack.display_name, _selectedModpack.recommended, user.displayName);
 
                 userInfo profile = GetSelectedProfile();
-                GetMinecraft(_selectedModpack, latestVersion.minecraft);
-                GetAssetsForVersion(latestVersion.minecraft);
-                GetLibrariesForVersion(_selectedModpack, latestVersion.minecraft, latestVersion.forgeVersion);
-                GetNatives(latestVersion.forgeVersion, latestVersion.minecraft);
-                GetMods(latestVersion);
+                GetMinecraft(_selectedModpack, recommendedVersion.minecraft);
+                GetAssetsForVersion(recommendedVersion.minecraft);
+                GetLibrariesForVersion(_selectedModpack, recommendedVersion.minecraft, recommendedVersion.forgeVersion);
+                GetNatives(recommendedVersion.forgeVersion, recommendedVersion.minecraft);
+                GetMods(recommendedVersion);
 
                 string fileLoc = _location + "\\modpacks\\" + _selectedModpack.name + "\\version.json";
 
@@ -574,11 +605,11 @@ namespace MechZone_ModPack_Launcher_v2
                     firstRun = true;
                 }
 
-                string latestVersionString = _selectedModpack.latest;
+                string recommendedVersionString = _selectedModpack.recommended;
                 string localVersionString = JsonConvert.DeserializeObject<JCversion>(File.ReadAllText(fileLoc)).version;
 
 
-                if (!latestVersionString.Equals(localVersionString))
+                if (!recommendedVersionString.Equals(localVersionString))
                 {
                     if (!firstRun)
                     {
@@ -632,12 +663,12 @@ namespace MechZone_ModPack_Launcher_v2
                 arguments += "-Xmx" + Settings.Default.ram + "m ";
                 //arguments += "-XX:MaxPermSize=256m ";
                 arguments += Settings.Default.javaParameters + " ";
-                arguments += "-Djava.library.path=\"" + _location + @"\modpacks\" + _selectedModpack.name + @"\bin\" + latestVersion.minecraft + "-" + latestVersion.forgeVersion + "-natives\" ";
+                arguments += "-Djava.library.path=\"" + _location + @"\modpacks\" + _selectedModpack.name + @"\bin\" + recommendedVersion.minecraft + "-" + recommendedVersion.forgeVersion + "-natives\" ";
                 //arguments += "-Dminecraft.applet.TargetDirectory=" + workingDirectory + " ";
                 arguments += "-cp ";
                 arguments = _downloadList.Where(t => t.type.Equals("libraries")).Aggregate(arguments, (current, t) => current + ("\"" + t.saveLocations[0] + "\";"));
                 arguments += "\"" + _location + @"\modpacks\" + _selectedModpack.name + "\\bin\\minecraft.jar\" net.minecraft.launchwrapper.Launch ";
-                switch (latestVersion.minecraft)
+                switch (recommendedVersion.minecraft)
                 {
                     
                     case "1.6.4":
@@ -724,23 +755,26 @@ namespace MechZone_ModPack_Launcher_v2
                 return;
             }
 
-            if ((version != "1.6.4" && type.Equals("error")) || text.Contains("Warning") || text.Contains("WARN") || text.Contains("ERROR") || text.Contains("Exception"))
-            {
-                logTextBox.AppendText(text + "\n", Color.Red);
-            }
-            else if (text.Contains("CHAT"))
-            {
-                logTextBox.AppendText(text + "\n", Color.Green);
-            }
-            else if (text.Contains("INFO"))
-            {
-                logTextBox.AppendText(text + "\n", Color.Blue);
-            }
-            else
-            {
-                logTextBox.AppendText(text + "\n");
-            }
+            logTextBox.AppendText(text + "\n", getColorForText(text, version));
             logTextBox.Focus();
+        }
+
+        private Color getColorForText(String text, String version)
+        {
+            Color returnColor = Color.Black;
+            if (text.ToLower().Contains("warn") || (version != "1.6.4" && text.ToLower().Contains("error")) || text.ToLower().Contains("exception") || text.ToLower().Contains("schwerwiegend") || text.ToLower().Contains("stderr"))
+            {
+                returnColor = Color.Red;
+            }
+            else if (text.ToLower().Contains("chat"))
+            {
+                returnColor = Color.Green;
+            }
+            //else if (text.ToLower().Contains("info"))
+            //{
+            //    returnColor = Color.Blue;
+            //}
+            return returnColor;
         }
 
         private void GetNatives(string forgeVersion, string minecraft)
@@ -749,10 +783,10 @@ namespace MechZone_ModPack_Launcher_v2
             {
                 JCdownloadList data = new JCdownloadList
                 {
-                    link = "http://solder.mechzone.net/natives/" + minecraft + "-" + forgeVersion + "-natives.zip"
+                    link = SolderUrl + "natives/" + minecraft + "-" + forgeVersion + "-natives.zip"
                 };
                 Console.WriteLine("natives:{0}", data.link);
-                data.hash = getStringFromUrl("http://solder.mechzone.net/natives/" + minecraft + "-" + forgeVersion + "-natives.zip.sha1");
+                data.hash = getStringFromUrl(SolderUrl + "natives/" + minecraft + "-" + forgeVersion + "-natives.zip.sha1");
                 data.hashType = "sha1";
                 data.type = "natives";
                 data.saveLocations = new List<string>
@@ -767,13 +801,13 @@ namespace MechZone_ModPack_Launcher_v2
             }
         }
 
-        private JCmodpackVersion GetLatestModPackVersion(JCmodpackInfo modPack)
+        private JCmodpackVersion GetRecommendedModPackVersion(JCmodpackInfo modPack)
         {
             string url = _solderApiUrl + "modpack/" + modPack.name;
             string data = getStringFromUrl(url);
             JCmodpackInfo json = JsonConvert.DeserializeObject<JCmodpackInfo>(data);
             _selectedModpack = json;
-            url = _solderApiUrl + "modpack/" + json.name + "/" + json.latest;
+            url = _solderApiUrl + "modpack/" + json.name + "/" + json.recommended;
             data = getStringFromUrl(url);
             JCmodpackVersion json2 = JsonConvert.DeserializeObject<JCmodpackVersion>(data);
             return json2;
@@ -826,6 +860,7 @@ namespace MechZone_ModPack_Launcher_v2
         {
             Console.WriteLine("Close selected: {0}", Settings.Default.selectedModPack);
             Settings.Default.Save();
+            monitor.Stop();
         }
 
         private void infoWebBrowser_Navigating(object sender, WebBrowserNavigatingEventArgs e)
@@ -908,7 +943,7 @@ namespace MechZone_ModPack_Launcher_v2
         {
             try
             {
-                string dlUrl = "http://solder.mechzone.net/install_profile/" + version + "-" + forgeVersion + ".json";
+                string dlUrl = SolderUrl + "install_profile/" + version + "-" + forgeVersion + ".json";
                 //Console.WriteLine(dlUrl);
                 string json = getStringFromUrl(dlUrl);
                 JCmcInfo g = JsonConvert.DeserializeObject<JCmcInfo>(json);
@@ -1069,7 +1104,10 @@ namespace MechZone_ModPack_Launcher_v2
                 string currentVersion = rk.GetValue("CurrentVersion").ToString();
                 using (RegistryKey key = rk.OpenSubKey(currentVersion))
                 {
-                    if (key != null) return key.GetValue("JavaHome") + "\\bin\\javaw.exe";
+                    if (key != null)
+                    {
+                        return key.GetValue("JavaHome") + "\\bin\\javaw.exe";
+                    }
                     return null;
                 }
             }
@@ -1189,6 +1227,11 @@ namespace MechZone_ModPack_Launcher_v2
                 //}
             }
         }
+
+        private void MainWindow_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            monitor.Stop();
+        }
     }
 
     public static class RichTextBoxExtensions
@@ -1210,4 +1253,5 @@ namespace MechZone_ModPack_Launcher_v2
             }
         }
     }
+
 }

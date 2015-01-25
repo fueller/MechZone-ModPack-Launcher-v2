@@ -412,6 +412,7 @@
             this.ShadowType = MetroFramework.Forms.MetroForm.MetroFormShadowType.DropShadow;
             this.Text = "MechZone ModPack Launcher";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.mainWindow_FormClosing);
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainWindow_FormClosed);
             this.Load += new System.EventHandler(this.mainWindow_Load);
             this.Shown += new System.EventHandler(this.mainWindow_Shown);
             this.mainTabControl.ResumeLayout(false);
